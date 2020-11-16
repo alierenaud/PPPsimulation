@@ -20,7 +20,7 @@ class PPP:
         return cls(loc)
     
     @classmethod
-    def randomNonHomog(cls,lam,fct,maximum=1):
+    def randomNonHomog(cls,lam,fct):
         newPPP = cls.randomHomog(lam)
         index = np.greater(fct(newPPP.loc),random.uniform(size=newPPP.loc.shape[0]))
         newPPP.loc = newPPP.loc[index]
@@ -54,7 +54,11 @@ pointpo = PPP.randomNonHomog(lam,fct)
 pointpo.plot()
 
 
+def fct(x):
+    return(np.exp(-(0.25-np.sqrt((x[:,0]-0.5)**2+(x[:,1]-0.5)**2))**2/0.003))
 
+pointpo = PPP.randomNonHomog(lam,fct)
+pointpo.plot()
 
 
 
