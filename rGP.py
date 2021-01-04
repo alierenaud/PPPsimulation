@@ -113,7 +113,7 @@ def makeGrid(xlim,ylim,res):
     return(grid)
 
 
-res = 50
+res = 25
 gridLoc = makeGrid([0,1], [0,1], res)
 
 
@@ -146,7 +146,7 @@ plt.show()
 
 ### zero mean (cond)
 
-nlocObs = 500
+nlocObs = 100
 nloc = res**2
 
 locObs = gridLoc[0:nlocObs,:]
