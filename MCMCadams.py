@@ -11,7 +11,7 @@ from scipy.stats import beta
 from rGP import GP
 from rGP import gaussianCov
 from rppp import PPP
-import matplotlib.pyplot as plt
+
 
 
 
@@ -94,7 +94,7 @@ b(0)
 b(random.choice(np.array(range(0,5))))
 
 ###
-# inserts or deletes a thinned events along with the GP value
+# inserts or deletes a thinned event along with the GP value
 ###
 
 def nthinSampler(lam, thisGP, locThin, valThin, locObs, valObs):
@@ -167,31 +167,123 @@ locThin, valThin
 # isInUnitSquare(x)
     
 
-###
-# beta random variable alpha=mu*phi, beta=(1-mu)*phi
-###
+# ###
+# # beta random variable alpha=mu*phi, beta=(1-mu)*phi
+# ###
     
-def rbeta(mu,phi):
-    return(beta.rvs(mu*phi,(1-mu)*phi))
+# def rbeta(mu,phi):
+#     return(beta.rvs(mu*phi,(1-mu)*phi))
         
-### TESTER: rbeta    
-rbeta(0.8, 1)
-    
-
-
-### to check    
-mu = np.random.uniform()
-kappa = 10
-phi = kappa/min(mu,1-mu)
-
-
-
-
-x = np.linspace(0,1,100)
-plt.plot(x, beta.pdf(x, mu*phi, (1-mu)*phi),
-       'r-', lw=5, alpha=0.6, label='beta pdf')
+# ### TESTER: rbeta    
+# rbeta(0.8, 1)
     
 ###
+# jitter a point x in [0,1] according to a beta(x*phi,(1-x)*phi)
+# phi = kappa/min(x,1-x), kappa > 1
+###
+
+def jitterBeta(x,kappa):
+    phi = kappa/min(x,1-x)
+    return(beta.rvs(x*phi,(1-x)*phi))
+
+### TESTER: jitterBeta
+jitterBeta(0.5,10)
+jitterBeta(0.5,3)
+jitterBeta(0.9,10)
+
+
+###
+# kernel of the beta(kappa) jitter from (2D) xOld to xNew
+###
+
+def kernelBeta(xNew,xOld,kappa):
+    phi0 = kappa/min(xOld[:,0],1-xOld[:,0])
+    phi1 = kappa/min(xOld[:,1],1-xOld[:,1])
+    d0 = beta.pdf(xNew[:,0], xOld[:,0]*phi0, (1-xOld[:,0])*phi0)
+    d1 = beta.pdf(xNew[:,1], xOld[:,1]*phi1, (1-xOld[:,1])*phi1)
+    return(d0*d1)
+
+### TESTER: kernelBeta
+xOld = np.array([[0.5,0.5]])
+xNew = np.array([[0.6,0.6]])
+kappa = 10
+
+kernelBeta(xNew, xOld, kappa)
+
+
+xOld = np.array([[0.5,0.5]])
+xNew = np.array([[0.7,0.7]])
+kappa = 10
+
+kernelBeta(xNew, xOld, kappa)
+
+
+xOld = np.array([[0.5,0.5]])
+xNew = np.array([[0.4,0.4]])
+kappa = 10
+
+kernelBeta(xNew, xOld, kappa)
+
+
+xOld = np.array([[0.7,0.7]])
+xNew = np.array([[0.8,0.8]])
+kappa = 10
+
+kernelBeta(xNew, xOld, kappa)
+
+xOld = np.array([[0.7,0.7]])
+xNew = np.array([[0.9,0.9]])
+kappa = 10
+
+kernelBeta(xNew, xOld, kappa)
+
+
+###
+# loops through thinned points and proposes new locations and GP values
+###
+
+def locationSampler(kappa, thisGP, locThin, valThin, locObs, valObs):
+    
+    i=0
+    for thisLoc in locThin:
+        thisLoc = np.array([thisLoc])
+        newLoc = np.array([[jitterBeta(thisLoc[:,0],kappa),jitterBeta(thisLoc[:,1],kappa)]])
+        
+        locTot = np.concatenate((locThin, locObs))
+        valTot = np.concatenate((valThin, valObs))
+        newVal = thisGP.rCondGP(newLoc, locTot, valTot)
+        
+        acc_loc = kernelBeta(thisLoc, newLoc, kappa)/(1+np.exp(newVal))*(1+np.exp(valThin[i]))/kernelBeta(newLoc, thisLoc, kappa) 
+        
+        U = random.uniform(size=1)
+        
+        if U < acc_loc:
+            locThin[i] = newLoc
+            valThin[i] = newVal
+        
+        i+=1
+    return(locThin, valThin)
+
+### TESTER locationSampler
+kappa=10
+newGP = GP(zeroMean,gaussianCov(1,1))
+
+lam=10
+pointpo = PPP.randomHomog(lam)
+
+locThin = pointpo.loc
+valThin = newGP.rGP(pointpo.loc) 
+
+pointpo = PPP.randomHomog(lam)
+
+locObs = pointpo.loc
+valObs = newGP.rCondGP(locObs, locThin, valThin) 
+
+    
+locThin, valThin = locationSampler(kappa, newGP, locThin, valThin, locObs, valObs)    
+locThin, valThin 
+
+
 
 
 
