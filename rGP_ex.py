@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from rGP import GP
 from rGP import gaussianCov
+from rGP import indCov
 
 
 
@@ -108,6 +109,32 @@ plt.ylim(0,1)
 plt.show()
 
 #### ####
+
+### indCov
+
+newGP = GP(zeroMean,indCov(1))
+
+resGP = newGP.rGP(gridLoc)
+
+#### to make plot ####
+
+imGP = resGP.reshape(res,res)
+
+x = np.linspace(0,1, res+1) 
+y = np.linspace(0,1, res+1) 
+X, Y = np.meshgrid(x,y) 
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
+
+plt.pcolormesh(X,Y,imGP)
+
+plt.xlim(0,1)
+plt.ylim(0,1)
+
+
+plt.show()
 
 ### cross mean
 

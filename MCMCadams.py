@@ -10,6 +10,7 @@ from numpy import random
 from scipy.stats import beta
 from rGP import GP
 from rGP import gaussianCov
+#from rGP import indCov
 from rppp import PPP
 
 
@@ -282,6 +283,162 @@ valObs = newGP.rCondGP(locObs, locThin, valThin)
     
 locThin, valThin = locationSampler(kappa, newGP, locThin, valThin, locObs, valObs)    
 locThin, valThin 
+
+###
+# expit
+###
+
+def expit(x):
+    return(np.exp(x)/(1+np.exp(x)))
+
+### TESTER: expit
+arr = np.array([[1,2,3],[4,5,6],[7,8,9]])
+arr
+
+expit(arr)
+
+
+###
+# potential energy in whitened space (AA^T=Sigma) Thinned events are first in Sigma
+###
+
+def U(whiteVal, A, nthin):
+    
+    return(np.sum(np.log(1+np.exp(-A[nthin:,:]@whiteVal))) + 
+           np.sum(np.log(1+np.exp(A[:nthin,:]@whiteVal))) +
+           1/2*np.transpose(whiteVal)@whiteVal)
+    
+### TESTER: U
+newGP = GP(zeroMean,gaussianCov(1,1))
+
+lam=10
+pointpo = PPP.randomHomog(lam) 
+
+locTot = pointpo.loc
+Sigma = newGP.covMatrix(locTot)
+valTot = newGP.rGP(pointpo.loc)
+
+nthin = 3
+
+A = np.linalg.cholesky(Sigma)
+whiteVal = np.linalg.inv(A)@valTot
+
+U(whiteVal,A,nthin)
+
+###
+# derivative of potential energy in whitened space (AA^T=Sigma) Thinned events are first in Sigma
+###
+
+def U_prime(whiteVal, A, nthin):
+
+    return(-np.transpose(np.transpose(expit(-A[nthin:,:]@whiteVal))@A[nthin:,:]) +
+           np.transpose(np.transpose(expit(A[:nthin,:]@whiteVal))@A[:nthin,:]) +
+           whiteVal)
+
+### TESTER: U_prime
+newGP = GP(zeroMean,gaussianCov(1,1))
+
+lam=10
+pointpo = PPP.randomHomog(lam) 
+
+locTot = pointpo.loc
+Sigma = newGP.covMatrix(locTot)
+valTot = newGP.rGP(pointpo.loc)
+
+nthin = 3
+
+A = np.linalg.cholesky(Sigma)
+whiteVal = np.linalg.inv(A)@valTot
+
+U_prime(whiteVal,A,nthin)
+
+###
+# sampling the GP values at the thinned and observed events
+###
+
+def functionSampler(delta,L,whiteVal,A,nthin):
+    
+    ntot = whiteVal.shape[0]
+    
+    v_init = random.normal(size=(ntot,1))
+    
+    v_prime = v_init - delta/2*U_prime(whiteVal, A, nthin)
+    x_prime = whiteVal + delta*v_prime
+    
+    l=0
+    while(l<L):
+        v_prime = v_prime - delta*U_prime(x_prime,A,nthin)
+        x_prime = x_prime + delta*v_prime
+        
+        l += 1
+        
+    v_prime = v_prime - delta/2*U_prime(x_prime,A,nthin)
+    
+    a_func = np.exp(-U(x_prime,A,nthin)+U(whiteVal,A,nthin)
+                    - 1/2*np.transpose(v_prime)@v_prime
+                    + 1/2*np.transpose(v_init)@v_init)
+    
+    Uf = random.uniform(size=1)
+        
+    if Uf < a_func:
+        whiteVal = x_prime
+    
+    return(whiteVal)
+
+
+### TESTER: functionSampler
+newGP = GP(zeroMean,gaussianCov(1,1))
+
+lam=10
+pointpo = PPP.randomHomog(lam) 
+
+locTot = pointpo.loc
+Sigma = newGP.covMatrix(locTot)
+valTot = newGP.rGP(pointpo.loc)
+
+nthin = 3
+delta = 0.1
+L = 10
+
+A = np.linalg.cholesky(Sigma)
+whiteVal = np.linalg.inv(A)@valTot
+
+valTot
+whiteVal = functionSampler(delta,L,whiteVal,A,nthin)
+
+A@whiteVal
+
+### ###
+
+newGP = GP(zeroMean,gaussianCov(1,1))
+
+lam=10
+pointpo = PPP.randomHomog(lam) 
+
+locTot = np.array([[0.1,0.1],[0.2,0.2],[0.3,0.3],[0.8,0.8],[0.9,0.9]])
+                    
+Sigma = newGP.covMatrix(locTot)
+valTot = newGP.rGP(locTot)
+
+nthin = 3
+delta = 0.1
+L = 10
+
+A = np.linalg.cholesky(Sigma)
+whiteVal = np.linalg.inv(A)@valTot
+
+valTot
+whiteVal = functionSampler(delta,L,whiteVal,A,nthin)
+
+A@whiteVal
+
+
+
+
+
+
+
+
 
 
 
