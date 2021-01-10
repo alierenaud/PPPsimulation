@@ -12,6 +12,8 @@ from rGP import GP
 from rGP import gaussianCov
 #from rGP import indCov
 from rppp import PPP
+from scipy.stats import gamma
+import matplotlib.pyplot as plt
 
 
 
@@ -433,16 +435,290 @@ whiteVal = functionSampler(delta,L,whiteVal,A,nthin)
 A@whiteVal
 
 
+###
+# base intensity lambda sampler
+###
+
+def intensitySampler(mu,sigma2,ntot):
+    alpha=mu**2/sigma2 + ntot
+    beta=mu/sigma2 + 1
+    lam = gamma.rvs(alpha, scale=1/beta)
+    return(lam)
+
+
+### TESTER: intensity sampler
+mu = 100
+sigma2 = 100
+
+intensitySampler(mu,sigma2,500)
+
+###
+# full sampler of thinned locations, thinned values, observed values and intensity
+###
+
+
+def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDel,kappa,delta,L,mu,sigma2):
+    
+    thinLoc = np.empty(shape=size,dtype=np.ndarray)
+    thinVal = np.empty(shape=size,dtype=np.ndarray)
+    obsVal = np.empty(shape=size,dtype=np.ndarray)
+    lams = np.empty(shape=size)
+    
+    # initialization
+    
+    thinLoc[0] = PPP.randomHomog(lam=lam_init).loc
+    thinVal[0] = thisGP.rGP(thinLoc[0])
+    obsVal[0] = thisGP.rCondGP(thisPPP.loc,thinLoc[0],thinVal[0])
+    lams[0] = lam_init
+    
+    i=1
+    while i < size:
+        locThin_prime, valThin_prime = nthinSampler(lams[i-1],thisGP,
+                                                    thinLoc[i-1],thinVal[i-1],
+                                                    thisPPP.loc,obsVal[i-1])
+        j=1
+        while j < nInsDel:
+            locThin_prime, valThin_prime = nthinSampler(lams[i-1],thisGP,
+                                                    locThin_prime, valThin_prime,
+                                                    thisPPP.loc,obsVal[i-1])
+            j+=1
+        
+        # locThin_prime, valThin_prime = locationSampler(kappa,thisGP,
+        #                                                locThin_prime, valThin_prime,
+        #                                                thisPPP.loc,obsVal[i-1])
+        
+        locTot_prime = np.concatenate((locThin_prime,thisPPP.loc))
+        valTot_prime = np.concatenate((valThin_prime,obsVal[i-1]))
+        
+        nthin = locThin_prime.shape[0]
+        
+        Sigma = thisGP.covMatrix(locTot_prime)
+        A = np.linalg.cholesky(Sigma)
+        
+        whiteVal_prime = np.linalg.inv(A)@valTot_prime
+        
+        whiteVal_prime = functionSampler(delta,L,whiteVal_prime,A,nthin)
+        
+        valTot_prime = A @ whiteVal_prime
+        
+        thinLoc[i] = locThin_prime
+        thinVal[i] = valTot_prime[:nthin,:]
+        obsVal[i] = valTot_prime[nthin:,:]
+        
+        ntot = valTot_prime.shape[0]
+        
+        lams[i] = intensitySampler(mu,sigma2,ntot)
+        
+        i+=1
+    
+    
+    return(thinLoc,thinVal,obsVal,lams)
+
+### TESTER: MCMCadams
+
+def fct(x):
+    return(np.exp((-x[:,0]**2-x[:,1]**2)/0.3))
+
+lam_sim=500
+
+pointpo = PPP.randomNonHomog(lam_sim,fct)
+pointpo.plot()
+
+
+newGP = GP(zeroMean,gaussianCov(1,1))
+
+niter=10
+
+import time
+
+t0 = time.time()
+thinLoc,thinVal,obsVal,lams = MCMCadams(niter,300,newGP,pointpo,10,10,0.1,10,300,10000)
+t1 = time.time()
+
+total1 = t1-t0
+
+
+def makeGrid(xlim,ylim,res):
+    grid = np.ndarray((res**2,2))
+    xlo = xlim[0]
+    xhi = xlim[1]
+    xrange = xhi - xlo
+    ylo = ylim[0]
+    yhi = ylim[1]
+    yrange = yhi - ylo
+    xs = np.arange(xlo, xhi, step=xrange/res) + xrange/res*0.5
+    ys = np.arange(ylo, yhi, step=yrange/res) + yrange/res*0.5
+    i=0
+    for x in xs:
+        j=0
+        for y in ys:
+            grid[i*res+j,:] = [x,y]
+            j+=1
+        i+=1
+    return(grid)
+
+
+res = 50
+gridLoc = makeGrid([0,1], [0,1], res)
+
+
+t0 = time.time()
+resGP = expit(newGP.rCondGP(gridLoc,np.concatenate((thinLoc[9],pointpo.loc)),
+              np.concatenate((thinVal[9],obsVal[9]))))
+t1 = time.time()
+
+total2 = t1-t0
 
 
 
+#### to make plot ####
+
+imGP = np.transpose(resGP.reshape(res,res))
+
+x = np.linspace(0,1, res+1) 
+y = np.linspace(0,1, res+1) 
+X, Y = np.meshgrid(x,y) 
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
+
+plt.pcolormesh(X,Y,imGP)
+
+plt.xlim(0,1)
+plt.ylim(0,1)
+
+
+plt.show()
+
+
+i=0
+while(i < niter):
+    resGP = expit(newGP.rCondGP(gridLoc,np.concatenate((thinLoc[i],pointpo.loc)),
+              np.concatenate((thinVal[i],obsVal[i]))))
+
+    
+    imGP = np.transpose(resGP.reshape(res,res))
+    
+    x = np.linspace(0,1, res+1) 
+    y = np.linspace(0,1, res+1) 
+    X, Y = np.meshgrid(x,y) 
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_aspect('equal')
+    
+    plt.pcolormesh(X,Y,imGP)
+    
+    plt.xlim(0,1)
+    plt.ylim(0,1)
+    
+    
+    plt.show()
+    i+=1
+
+### ###
+
+def fct(x):
+    return(np.exp(-(0.25-np.sqrt((x[:,0]-0.5)**2+(x[:,1]-0.5)**2))**2/0.003))
+
+lam_sim=500
+
+pointpo = PPP.randomNonHomog(lam_sim,fct)
+pointpo.plot()
+
+
+newGP = GP(zeroMean,gaussianCov(1,1))
+
+niter=10
+
+import time
+
+t0 = time.time()
+thinLoc,thinVal,obsVal,lams = MCMCadams(niter,300,newGP,pointpo,10,10,0.1,10,300,10000)
+t1 = time.time()
+
+total1 = t1-t0
+
+
+def makeGrid(xlim,ylim,res):
+    grid = np.ndarray((res**2,2))
+    xlo = xlim[0]
+    xhi = xlim[1]
+    xrange = xhi - xlo
+    ylo = ylim[0]
+    yhi = ylim[1]
+    yrange = yhi - ylo
+    xs = np.arange(xlo, xhi, step=xrange/res) + xrange/res*0.5
+    ys = np.arange(ylo, yhi, step=yrange/res) + yrange/res*0.5
+    i=0
+    for x in xs:
+        j=0
+        for y in ys:
+            grid[i*res+j,:] = [x,y]
+            j+=1
+        i+=1
+    return(grid)
+
+
+res = 50
+gridLoc = makeGrid([0,1], [0,1], res)
+
+
+t0 = time.time()
+resGP = expit(newGP.rCondGP(gridLoc,np.concatenate((thinLoc[9],pointpo.loc)),
+              np.concatenate((thinVal[9],obsVal[9]))))
+t1 = time.time()
+
+total2 = t1-t0
 
 
 
+#### to make plot ####
+
+imGP = np.transpose(resGP.reshape(res,res))
+
+x = np.linspace(0,1, res+1) 
+y = np.linspace(0,1, res+1) 
+X, Y = np.meshgrid(x,y) 
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
+
+plt.pcolormesh(X,Y,imGP)
+
+plt.xlim(0,1)
+plt.ylim(0,1)
 
 
+plt.show()
 
 
+i=0
+while(i < niter):
+    resGP = expit(newGP.rCondGP(gridLoc,np.concatenate((thinLoc[i],pointpo.loc)),
+              np.concatenate((thinVal[i],obsVal[i]))))
+
+    
+    imGP = np.transpose(resGP.reshape(res,res))
+    
+    x = np.linspace(0,1, res+1) 
+    y = np.linspace(0,1, res+1) 
+    X, Y = np.meshgrid(x,y) 
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_aspect('equal')
+    
+    plt.pcolormesh(X,Y,imGP)
+    
+    plt.xlim(0,1)
+    plt.ylim(0,1)
+    
+    
+    plt.show()
+    i+=1
 
 
 

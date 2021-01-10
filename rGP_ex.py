@@ -42,7 +42,7 @@ def makeGrid(xlim,ylim,res):
     return(grid)
 
 
-res = 25
+res = 50
 gridLoc = makeGrid([0,1], [0,1], res)
 
 

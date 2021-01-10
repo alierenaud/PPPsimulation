@@ -10,7 +10,7 @@ import numpy as np
 
 ### usage example
 
-lam=1000
+lam=500
 
 pointpo = PPP.randomHomog(lam)
 pointpo.plot()
