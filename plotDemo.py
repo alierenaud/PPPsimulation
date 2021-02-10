@@ -32,8 +32,11 @@ plt.show()
 
 fig.savefig("foo.pdf", bbox_inches='tight')   
 
+# def fct(x):
+#     return(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.003))
+
 def fct(x):
-    return(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.003))
+    return(np.exp(-((x[:,0])+(x[:,1]))**2/0.7))
 
 index = np.greater(fct(pointpo.loc),random.uniform(size=pointpo.loc.shape[0]))
 nhPPP = pointpo.loc[index]
@@ -83,6 +86,12 @@ k=0
 while(k<N):
     plt.plot([nsLoc[k,0],nhPPP[allocs[k],0]], [nsLoc[k,1],nhPPP[allocs[k],1]],"r-", lw=0.3)
     k +=1
+    
+plt.plot([1/4,1/4], [1/4,3/4],c="black", lw=1)   
+plt.plot([3/4,1/4], [1/4,1/4],c="black", lw=1)
+plt.plot([3/4,3/4], [3/4,1/4],c="black", lw=1)
+plt.plot([1/4,3/4], [3/4,3/4],c="black", lw=1)
+
 
 plt.xlim(0,1)
 plt.ylim(0,1)
@@ -94,7 +103,28 @@ fig.savefig("foo2.pdf", bbox_inches='tight')
         
 
 
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
 
+plt.plot(pointpo.loc[:,0],pointpo.loc[:,1], 'o', c="#00743F", alpha=0.5)
+plt.plot(nhPPP[:,0],nhPPP[:,1], 'o', c="#1E65A7")
+plt.plot(nsLoc[:,0],nsLoc[:,1], 'ro', ms=3)
+
+N = allocs.shape[0] 
+k=0
+while(k<N):
+    plt.plot([nsLoc[k,0],nhPPP[allocs[k],0]], [nsLoc[k,1],nhPPP[allocs[k],1]],"r-", lw=0.3)
+    k +=1
+
+
+
+plt.xlim(1/4,3/4)
+plt.ylim(1/4,3/4)
+
+plt.show()     
+        
+fig.savefig("foo3.pdf", bbox_inches='tight')  
 
 
 
