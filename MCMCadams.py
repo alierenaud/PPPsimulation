@@ -620,10 +620,10 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
 
 # def fct(x):
 #     return(np.exp((-x[:,0]**2-x[:,1]**2)/0.3))
-# def fct(x):
-#     return(np.exp(-(0.25-np.sqrt((x[:,0]-0.5)**2+(x[:,1]-0.5)**2))**2/0.003))
 def fct(x):
-    return(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.007))
+    return(np.exp(-(0.25-np.sqrt((x[:,0]-0.5)**2+(x[:,1]-0.5)**2))**2/0.003)*0.8+0.10)
+# def fct(x):
+#     return(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.007))
 
 lam_sim=500
 
@@ -633,12 +633,12 @@ pointpo.plot()
 
 newGP = GP(zeroMean,gaussianCov(2,0.5))
 
-niter=25
+niter=20
 
 import time
 
 t0 = time.time()
-thinLoc,thinVal,obsVal,lams = MCMCadams(niter,600,newGP,pointpo,25,10,0.1,10,600,1000)
+thinLoc,thinVal,obsVal,lams = MCMCadams(niter,400,newGP,pointpo,25,10,0.1,10,400,1000)
 t1 = time.time()
 
 total1 = t1-t0
@@ -735,17 +735,10 @@ plt.show()
 #### first iteration ###
 
 
-resGP = expit(newGP.rCondGP(gridLoc,np.concatenate((thinLoc[0],pointpo.loc)),
-              np.concatenate((thinVal[0],obsVal[0]))))
-
-
-
-
-
 
 #### to make plot ####
 
-imGP = np.transpose(resGP.reshape(res,res))
+imGP = np.transpose(resGP[0].reshape(res,res))
 
 x = np.linspace(0,1, res+1) 
 y = np.linspace(0,1, res+1) 
@@ -761,23 +754,32 @@ plt.xlim(0,1)
 plt.ylim(0,1)
 plt.colorbar()
 
+
+plt.show()
+
+
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
+
+plt.scatter(thinLoc[0][:,0],thinLoc[0][:,1])
+
+plt.xlim(0,1)
+plt.ylim(0,1)
 
 plt.show()
 
 #### last iteration ###
 
 
-resGP = expit(newGP.rCondGP(gridLoc,np.concatenate((thinLoc[niter-1],pointpo.loc)),
-              np.concatenate((thinVal[niter-1],obsVal[niter-1]))))
-
-
 
 
 
 
 #### to make plot ####
 
-imGP = np.transpose(resGP.reshape(res,res))
+imGP = np.transpose(resGP[niter-1].reshape(res,res))
 
 x = np.linspace(0,1, res+1) 
 y = np.linspace(0,1, res+1) 
@@ -797,15 +799,27 @@ plt.colorbar()
 plt.show()
 
 
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
+
+plt.scatter(thinLoc[niter-1][:,0],thinLoc[niter-1][:,1])
+
+plt.xlim(0,1)
+plt.ylim(0,1)
+
+plt.show()
+
+
+
 ### every iteration ###
 
 i=0
 while(i < niter):
-    resGP = expit(newGP.rCondGP(gridLoc,np.concatenate((thinLoc[i],pointpo.loc)),
-              np.concatenate((thinVal[i],obsVal[i]))))
+
 
     
-    imGP = np.transpose(resGP.reshape(res,res))
+    imGP = np.transpose(resGP[i].reshape(res,res))
     
     x = np.linspace(0,1, res+1) 
     y = np.linspace(0,1, res+1) 
@@ -823,6 +837,21 @@ while(i < niter):
     
     
     plt.show()
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_aspect('equal')
+
+    plt.scatter(thinLoc[i][:,0],thinLoc[i][:,1])
+    plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1])
+
+    plt.xlim(0,1)
+    plt.ylim(0,1)
+
+    plt.show()
+    
+    
+    
     i+=1
 
 # ###
