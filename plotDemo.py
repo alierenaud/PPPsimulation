@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 ### usage example
 
-lam=200
+lam=500
 alpha = 2.2
 sigma = 0.02
 
@@ -35,8 +35,10 @@ fig.savefig("foo.pdf", bbox_inches='tight')
 # def fct(x):
 #     return(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.003))
 
+# def fct(x):
+#     return(np.exp(-((x[:,0])+(x[:,1]))**2/0.3))
 def fct(x):
-    return(np.exp(-((x[:,0])+(x[:,1]))**2/0.7))
+    return(np.exp(-(0.25-np.sqrt((x[:,0]-0.5)**2+(x[:,1]-0.5)**2))**2/0.003))
 
 index = np.greater(fct(pointpo.loc),random.uniform(size=pointpo.loc.shape[0]))
 nhPPP = pointpo.loc[index]
@@ -47,8 +49,8 @@ fig = plt.figure()
 ax = fig.add_subplot(111)
 ax.set_aspect('equal')
 
-plt.plot(pointpo.loc[:,0],pointpo.loc[:,1], 'o', c="#00743F", alpha=0.5)
-plt.plot(nhPPP[:,0],nhPPP[:,1], 'o', c="#1E65A7")
+plt.plot(pointpo.loc[:,0],pointpo.loc[:,1], 'o')
+plt.plot(nhPPP[:,0],nhPPP[:,1], 'o')
 plt.xlim(0,1)
 plt.ylim(0,1)
 

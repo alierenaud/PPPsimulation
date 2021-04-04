@@ -80,7 +80,7 @@ class GP:
     
 def gaussianCov(sigma2,l):
     def evalCov(x,y):
-        return(sigma2*np.exp(-np.linalg.norm(x-y)/2/l**2))
+        return(sigma2*np.exp(-np.linalg.norm(x-y)/l))
     return(evalCov)
 
 def indCov(sigma2):
