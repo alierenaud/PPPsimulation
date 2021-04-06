@@ -36,10 +36,11 @@ class GP:
         nloc = loc.shape[0]
         Sigma = np.matlib.zeros((nloc,nloc))
         i=0
-        for x in loc:
+        while i < nloc:
             j=0
-            for y in loc:
-                Sigma[i,j] = self.cov(x,y)
+            while j <=i:
+                Sigma[i,j] = self.cov(loc[i],loc[j])
+                Sigma[j,i] = Sigma[i,j]
                 j+=1
             i+=1
         return(Sigma)
