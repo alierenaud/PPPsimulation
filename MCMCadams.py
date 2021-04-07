@@ -637,10 +637,10 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
 
 
 
-# def fct(x):
-#     return(np.exp((-x[:,0]**2-x[:,1]**2)/0.3))
 def fct(x):
-    return(np.exp(-(0.25-np.sqrt((x[:,0]-0.5)**2+(x[:,1]-0.5)**2))**2/0.003)*0.8+0.10)
+    return(np.exp((-x[:,0]**2-x[:,1]**2)/0.3))
+# def fct(x):
+#     return(np.exp(-(0.25-np.sqrt((x[:,0]-0.5)**2+(x[:,1]-0.5)**2))**2/0.003)*0.8+0.10)
 # def fct(x):
 #     return(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.007)*0.8+0.10)
 
@@ -652,7 +652,7 @@ pointpo.plot()
 
 newGP = GP(zeroMean,gaussianCov(2,0.5))
 
-niter=100
+niter=1000
 
 import time
 
@@ -662,7 +662,29 @@ t1 = time.time()
 
 total1 = t1-t0
 
+i=0
+while(i < niter):
 
+
+    
+
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_aspect('equal')
+    
+    plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1])
+    plt.scatter(thinLoc[i][:,0],thinLoc[i][:,1])
+    
+
+    plt.xlim(0,1)
+    plt.ylim(0,1)
+
+    plt.show()
+    
+    
+    fig.savefig("Scatter"+str(i)+".pdf", bbox_inches='tight')
+    i+=1
 
 def makeGrid(xlim,ylim,res):
     grid = np.ndarray((res**2,2))
@@ -722,6 +744,7 @@ plt.xlim(0,1)
 plt.ylim(0,1)
 plt.colorbar()
 
+plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
 
 plt.show()
 fig.savefig("meanInt.pdf", bbox_inches='tight')
@@ -748,7 +771,7 @@ plt.pcolormesh(X,Y,imGP, cmap='cool')
 plt.xlim(0,1)
 plt.ylim(0,1)
 plt.colorbar()
-
+plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
 
 plt.show()
 fig.savefig("trueInt.pdf", bbox_inches='tight')
@@ -775,7 +798,7 @@ plt.pcolormesh(X,Y,imGP, cmap='cool')
 plt.xlim(0,1)
 plt.ylim(0,1)
 plt.colorbar()
-
+plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
 
 plt.show()
 fig.savefig("initInt.pdf", bbox_inches='tight')
@@ -786,12 +809,13 @@ ax = fig.add_subplot(111)
 ax.set_aspect('equal')
 
 plt.scatter(thinLoc[0][:,0],thinLoc[0][:,1])
-fig.savefig("initScatter.pdf", bbox_inches='tight')
+
 
 plt.xlim(0,1)
 plt.ylim(0,1)
 
 plt.show()
+fig.savefig("initScatter.pdf", bbox_inches='tight')
 
 #### last iteration ###
 
@@ -817,7 +841,7 @@ plt.pcolormesh(X,Y,imGP, cmap='cool')
 plt.xlim(0,1)
 plt.ylim(0,1)
 plt.colorbar()
-
+plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
 
 plt.show()
 fig.savefig("finInt.pdf", bbox_inches='tight')
@@ -859,7 +883,7 @@ while(i < niter):
     plt.xlim(0,1)
     plt.ylim(0,1)
     plt.colorbar()
-    
+    plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
     
     plt.show()
     fig.savefig("Int"+str(i)+".pdf", bbox_inches='tight')
