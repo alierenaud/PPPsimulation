@@ -78,6 +78,37 @@ class GP:
         Z = random.normal(size=(nlocPred,1))
         return(np.matmul(L,Z)+mu1c2)
     
+    def rCondGP1DSigma(self, locPred, locObs, valObs, Sigma):
+
+        # mu = self.meanVec(loc)
+        
+
+        nlocObs = locObs.shape[0]
+        
+        # mu1 = mu[0:nlocPred]
+        # mu2 = mu[nlocPred:nloc]
+        
+        Sigma11 = self.cov(locPred,locPred)
+        Sigma12 =  np.matlib.zeros((1,nlocObs))
+        i=0
+        while i<nlocObs:
+            Sigma12[0,i] = self.cov(locPred,locObs[i])
+            i+=1
+        Sigma21 = np.transpose(Sigma12)
+        Sigma22 = Sigma
+        
+        newSigma = np.block([[Sigma11,Sigma12],[Sigma21,Sigma22]])
+        
+        invSigma22 = np.linalg.inv(Sigma22)
+        
+        mu1c2 = Sigma12@invSigma22@valObs
+        Sigma1c2 = Sigma11 - Sigma12@invSigma22@Sigma21
+        
+        L = np.linalg.cholesky(Sigma1c2)
+        Z = random.normal(size=(1,1))
+        return(np.matmul(L,Z)+mu1c2, newSigma)
+
+    
     
 def gaussianCov(sigma2,l):
     def evalCov(x,y):
@@ -92,4 +123,13 @@ def indCov(sigma2):
             return(0)
     return(evalCov)     
 
-
+def rMultNorm(n,mu,Sigma):
+    Z = random.normal(size=(n,1))
+    L = np.linalg.cholesky(Sigma)
+    return(np.matmul(L,Z)+mu)
+    
+    
+    
+    
+    
+    

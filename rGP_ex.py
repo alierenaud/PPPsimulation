@@ -271,7 +271,32 @@ plt.show()
 
 
 
+#### rCondGp1DSigma TESTER
 
+
+thisGP = GP(zeroMean,gaussianCov(2,0.5))
+lam=1000
+
+pointpo = PPP.randomHomog(lam)
+pointpo.plot()
+
+Sigma = thisGP.covMatrix(pointpo.loc)
+
+valObs = thisGP.rGP(pointpo.loc)
+
+t0 = time.time()
+newVal1 = thisGP.rCondGP(np.array([[0.5,0.5]]),pointpo.loc, valObs)
+t1 = time.time()
+total1 = t1-t0
+
+from rGP import GP
+
+t0 = time.time()
+newVal2, newSigma = thisGP.rCondGP1DSigma(np.array([0.5,0.5]),pointpo.loc, valObs, Sigma)
+t1 = time.time()
+total2 = t1-t0
+
+np.delete(np.delete(Sigma, 0, 0),0, 1)
 
 
 
