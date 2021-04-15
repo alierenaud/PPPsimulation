@@ -8,13 +8,13 @@ Created on Mon Jan  4 12:51:32 2021
 import numpy as np
 from numpy import random
 from scipy.stats import beta
-from rGP import GP
-from rGP import gaussianCov
+# from rGP import GP
+# from rGP import gaussianCov
 from rGP import rMultNorm
 #from rGP import indCov
 from rppp import PPP
 from scipy.stats import gamma
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 
 
