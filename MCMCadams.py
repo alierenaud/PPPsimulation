@@ -8,14 +8,14 @@ Created on Mon Jan  4 12:51:32 2021
 import numpy as np
 from numpy import random
 from scipy.stats import beta
-# from rGP import GP
-# from rGP import gaussianCov
+from rGP import GP
+from rGP import gaussianCov
 from rGP import rMultNorm
 #from rGP import indCov
 from rppp import PPP
 from scipy.stats import gamma
-# import matplotlib.pyplot as plt
-
+import matplotlib.pyplot as plt
+import scipy as sp
 
 
 
@@ -42,8 +42,8 @@ def insProp(thisGP, locObs, valObs, Sigma):
 
 
 # ### TESTER: insProp
-# def zeroMean(x):
-#     return(0) 
+def zeroMean(x):
+    return(0) 
 
 # newGP = GP(zeroMean,gaussianCov(1,1))
 
@@ -612,8 +612,9 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
         
         # Sigma = thisGP.covMatrix(locTot_prime)
         A = np.linalg.cholesky(Sigma)
+        ntot = A.shape[0]
         
-        whiteVal_prime = np.linalg.inv(A)@valTot_prime
+        whiteVal_prime = sp.linalg.solve_triangular(A,np.identity(ntot),lower=True)@valTot_prime
         
         whiteVal_prime = functionSampler(delta,L,whiteVal_prime,A,nthin)
         
@@ -637,30 +638,30 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
 
 
 
+def fct(x):
+    return(np.exp((-x[:,0]**2-x[:,1]**2)/0.3))
 # def fct(x):
-#     return(np.exp((-x[:,0]**2-x[:,1]**2)/0.3))
-# # def fct(x):
-# #     return(np.exp(-(0.25-np.sqrt((x[:,0]-0.5)**2+(x[:,1]-0.5)**2))**2/0.003)*0.8+0.10)
-# # def fct(x):
-# #     return(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.007)*0.8+0.10)
+#     return(np.exp(-(0.25-np.sqrt((x[:,0]-0.5)**2+(x[:,1]-0.5)**2))**2/0.003)*0.8+0.10)
+# def fct(x):
+#     return(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.007)*0.8+0.10)
 
-# lam_sim=600
+lam_sim=1000
 
-# pointpo = PPP.randomNonHomog(lam_sim,fct)
-# pointpo.plot()
+pointpo = PPP.randomNonHomog(lam_sim,fct)
+pointpo.plot()
 
 
-# newGP = GP(zeroMean,gaussianCov(2,0.5))
+newGP = GP(zeroMean,gaussianCov(2,0.5))
 
-# niter=100
+niter=30
 
-# import time
+import time
 
-# t0 = time.time()
-# thinLoc,thinVal,obsVal,lams = MCMCadams(niter,1000,newGP,pointpo,100,10,0.1,10,1000,1000)
-# t1 = time.time()
+t0 = time.time()
+thinLoc,thinVal,obsVal,lams = MCMCadams(niter,1000,newGP,pointpo,100,10,0.1,10,1000,10000)
+t1 = time.time()
 
-# total1 = t1-t0
+total1 = t1-t0
 
 # i=0
 # while(i < niter):
@@ -686,224 +687,142 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
 #     fig.savefig("Scatter"+str(i)+".pdf", bbox_inches='tight')
 #     i+=1
 
-# def makeGrid(xlim,ylim,res):
-#     grid = np.ndarray((res**2,2))
-#     xlo = xlim[0]
-#     xhi = xlim[1]
-#     xrange = xhi - xlo
-#     ylo = ylim[0]
-#     yhi = ylim[1]
-#     yrange = yhi - ylo
-#     xs = np.arange(xlo, xhi, step=xrange/res) + xrange/res*0.5
-#     ys = np.arange(ylo, yhi, step=yrange/res) + yrange/res*0.5
-#     i=0
-#     for x in xs:
-#         j=0
-#         for y in ys:
-#             grid[i*res+j,:] = [x,y]
-#             j+=1
-#         i+=1
-#     return(grid)
+def makeGrid(xlim,ylim,res):
+    grid = np.ndarray((res**2,2))
+    xlo = xlim[0]
+    xhi = xlim[1]
+    xrange = xhi - xlo
+    ylo = ylim[0]
+    yhi = ylim[1]
+    yrange = yhi - ylo
+    xs = np.arange(xlo, xhi, step=xrange/res) + xrange/res*0.5
+    ys = np.arange(ylo, yhi, step=yrange/res) + yrange/res*0.5
+    i=0
+    for x in xs:
+        j=0
+        for y in ys:
+            grid[i*res+j,:] = [x,y]
+            j+=1
+        i+=1
+    return(grid)
 
 
-# res = 30
-# gridLoc = makeGrid([0,1], [0,1], res)
+res = 50
+gridLoc = makeGrid([0,1], [0,1], res)
 
 
 
-# resGP = np.empty(shape=niter,dtype=np.ndarray)
-# i=0
-# t0 = time.time()
-# while(i < niter):
-#     resGP[i] = lams[i]*expit(newGP.rCondGP(gridLoc,np.concatenate((thinLoc[i],pointpo.loc)),
-#               np.concatenate((thinVal[i],obsVal[i]))))
-#     print(i)
-#     i+=1
-# t1 = time.time()
+resGP = np.empty(shape=niter,dtype=np.ndarray)
+i=0
+t0 = time.time()
+while(i < niter):
+    resGP[i] = lams[i]*expit(newGP.rCondGP(gridLoc,np.concatenate((thinLoc[i],pointpo.loc)),
+              np.concatenate((thinVal[i],obsVal[i]))))
+    print(i)
+    i+=1
+t1 = time.time()
 
-# total2 = t1-t0
+total2 = t1-t0
 
-# meanGP = np.mean(resGP)
+meanGP = np.mean(resGP)
 
 
-# #### to make plot ####
+#### to make plot ####
 
-# imGP = np.transpose(meanGP.reshape(res,res))
+imGP = np.transpose(meanGP.reshape(res,res))
 
-# x = np.linspace(0,1, res+1) 
-# y = np.linspace(0,1, res+1) 
-# X, Y = np.meshgrid(x,y) 
+x = np.linspace(0,1, res+1) 
+y = np.linspace(0,1, res+1) 
+X, Y = np.meshgrid(x,y) 
 
-# fig = plt.figure()
-# ax = fig.add_subplot(111)
-# ax.set_aspect('equal')
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
 
-# plt.pcolormesh(X,Y,imGP, cmap='cool')
+plt.pcolormesh(X,Y,imGP, cmap='cool')
 
-# plt.xlim(0,1)
-# plt.ylim(0,1)
-# plt.colorbar()
+plt.xlim(0,1)
+plt.ylim(0,1)
+plt.colorbar()
 
-# plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
+plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
 
-# plt.show()
-# fig.savefig("meanInt.pdf", bbox_inches='tight')
+plt.show()
+fig.savefig("meanInt.pdf", bbox_inches='tight')
 
 
-# #### plot of actual intensity ####
+#### plot of actual intensity ####
 
-# realInt = lam_sim*fct(gridLoc)
+realInt = lam_sim*fct(gridLoc)
 
-# #### to make plot ####
+#### to make plot ####
 
-# imGP = np.transpose(realInt.reshape(res,res))
+imGP = np.transpose(realInt.reshape(res,res))
 
-# x = np.linspace(0,1, res+1) 
-# y = np.linspace(0,1, res+1) 
-# X, Y = np.meshgrid(x,y) 
+x = np.linspace(0,1, res+1) 
+y = np.linspace(0,1, res+1) 
+X, Y = np.meshgrid(x,y) 
 
-# fig = plt.figure()
-# ax = fig.add_subplot(111)
-# ax.set_aspect('equal')
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
 
-# plt.pcolormesh(X,Y,imGP, cmap='cool')
+plt.pcolormesh(X,Y,imGP, cmap='cool')
 
-# plt.xlim(0,1)
-# plt.ylim(0,1)
-# plt.colorbar()
-# plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
+plt.xlim(0,1)
+plt.ylim(0,1)
+plt.colorbar()
+plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
 
-# plt.show()
-# fig.savefig("trueInt.pdf", bbox_inches='tight')
+plt.show()
+fig.savefig("trueInt.pdf", bbox_inches='tight')
 
 
-# #### first iteration ###
 
 
+### every iteration ###
 
-# #### to make plot ####
-
-# imGP = np.transpose(resGP[0].reshape(res,res))
-
-# x = np.linspace(0,1, res+1) 
-# y = np.linspace(0,1, res+1) 
-# X, Y = np.meshgrid(x,y) 
-
-# fig = plt.figure()
-# ax = fig.add_subplot(111)
-# ax.set_aspect('equal')
-
-# plt.pcolormesh(X,Y,imGP, cmap='cool')
-
-# plt.xlim(0,1)
-# plt.ylim(0,1)
-# plt.colorbar()
-# plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
-
-# plt.show()
-# fig.savefig("initInt.pdf", bbox_inches='tight')
-
-
-# fig = plt.figure()
-# ax = fig.add_subplot(111)
-# ax.set_aspect('equal')
-
-# plt.scatter(thinLoc[0][:,0],thinLoc[0][:,1])
-
-
-# plt.xlim(0,1)
-# plt.ylim(0,1)
-
-# plt.show()
-# fig.savefig("initScatter.pdf", bbox_inches='tight')
-
-# #### last iteration ###
-
-
-
-
-
-
-# #### to make plot ####
-
-# imGP = np.transpose(resGP[niter-1].reshape(res,res))
-
-# x = np.linspace(0,1, res+1) 
-# y = np.linspace(0,1, res+1) 
-# X, Y = np.meshgrid(x,y) 
-
-# fig = plt.figure()
-# ax = fig.add_subplot(111)
-# ax.set_aspect('equal')
-
-# plt.pcolormesh(X,Y,imGP, cmap='cool')
-
-# plt.xlim(0,1)
-# plt.ylim(0,1)
-# plt.colorbar()
-# plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
-
-# plt.show()
-# fig.savefig("finInt.pdf", bbox_inches='tight')
-
-
-# fig = plt.figure()
-# ax = fig.add_subplot(111)
-# ax.set_aspect('equal')
-
-# plt.scatter(thinLoc[niter-1][:,0],thinLoc[niter-1][:,1])
-
-# plt.xlim(0,1)
-# plt.ylim(0,1)
-
-# plt.show()
-# fig.savefig("finScatter.pdf", bbox_inches='tight')
-
-
-
-# ### every iteration ###
-
-# i=0
-# while(i < niter):
+i=0
+while(i < niter):
 
 
     
-#     imGP = np.transpose(resGP[i].reshape(res,res))
+    imGP = np.transpose(resGP[i].reshape(res,res))
     
-#     x = np.linspace(0,1, res+1) 
-#     y = np.linspace(0,1, res+1) 
-#     X, Y = np.meshgrid(x,y) 
+    x = np.linspace(0,1, res+1) 
+    y = np.linspace(0,1, res+1) 
+    X, Y = np.meshgrid(x,y) 
     
-#     fig = plt.figure()
-#     ax = fig.add_subplot(111)
-#     ax.set_aspect('equal')
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_aspect('equal')
     
-#     plt.pcolormesh(X,Y,imGP, cmap='cool')
+    plt.pcolormesh(X,Y,imGP, cmap='cool')
     
-#     plt.xlim(0,1)
-#     plt.ylim(0,1)
-#     plt.colorbar()
-#     plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
+    plt.xlim(0,1)
+    plt.ylim(0,1)
+    plt.colorbar()
+    plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
     
-#     plt.show()
-#     fig.savefig("Int"+str(i)+".pdf", bbox_inches='tight')
+    plt.show()
+    fig.savefig("Int"+str(i)+".pdf", bbox_inches='tight')
     
-#     fig = plt.figure()
-#     ax = fig.add_subplot(111)
-#     ax.set_aspect('equal')
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_aspect('equal')
     
-#     plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1])
-#     plt.scatter(thinLoc[i][:,0],thinLoc[i][:,1])
+    plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1])
+    plt.scatter(thinLoc[i][:,0],thinLoc[i][:,1])
     
 
-#     plt.xlim(0,1)
-#     plt.ylim(0,1)
+    plt.xlim(0,1)
+    plt.ylim(0,1)
 
-#     plt.show()
+    plt.show()
     
     
-#     fig.savefig("Scatter"+str(i)+".pdf", bbox_inches='tight')
-#     i+=1
+    fig.savefig("Scatter"+str(i)+".pdf", bbox_inches='tight')
+    i+=1
 
 # ###
 # # full sampler of thinned locations, thinned values, observed values and intensity

@@ -195,7 +195,14 @@ total3
 A_inv@A
 
 
+t0 = time.time()
+A_inv = np.linalg.inv(A)
+t1 = time.time()
 
+total4 = t1-t0
+total4
+
+A_inv@A
 
 
 
