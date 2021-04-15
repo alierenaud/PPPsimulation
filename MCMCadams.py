@@ -41,21 +41,21 @@ def insProp(thisGP, locObs, valObs, Sigma):
 
 
 
-### TESTER: insProp
-def zeroMean(x):
-    return(0) 
+# ### TESTER: insProp
+# def zeroMean(x):
+#     return(0) 
 
-newGP = GP(zeroMean,gaussianCov(1,1))
+# newGP = GP(zeroMean,gaussianCov(1,1))
 
-lam=25
-pointpo = PPP.randomHomog(lam)
+# lam=25
+# pointpo = PPP.randomHomog(lam)
 
-resGP = newGP.rGP(pointpo.loc)
+# resGP = newGP.rGP(pointpo.loc)
 
-Sigma = newGP.covMatrix(pointpo.loc)
+# Sigma = newGP.covMatrix(pointpo.loc)
 
-insProp(newGP, pointpo.loc, resGP, Sigma)
-###
+# insProp(newGP, pointpo.loc, resGP, Sigma)
+# ###
 
 ### 
 # Takes the location of thinned points and removes 1 uniformly
@@ -74,16 +74,16 @@ def delProp(locThin, valThin):
     
     return(oldVal,newLocThin,newValThin, delInd)
 
-### TESTER: delProp
-newGP = GP(zeroMean,gaussianCov(1,1))
+# ### TESTER: delProp
+# newGP = GP(zeroMean,gaussianCov(1,1))
 
-lam=25
-pointpo = PPP.randomHomog(lam)
+# lam=25
+# pointpo = PPP.randomHomog(lam)
 
-resGP = newGP.rGP(pointpo.loc)
+# resGP = newGP.rGP(pointpo.loc)
 
-delProp(pointpo.loc, resGP)
-###
+# delProp(pointpo.loc, resGP)
+# ###
 
 ###
 # take number of thin events and return the prob of insertion
@@ -95,9 +95,9 @@ def b(nthin):
     else:
         return(0.5)
 
-### TESTER: b
-b(0)
-b(random.choice(np.array(range(0,5))))
+# ### TESTER: b
+# b(0)
+# b(random.choice(np.array(range(0,5))))
 
 
 ###
@@ -110,9 +110,9 @@ def alpha(nthin):
     else:
         return(0.70)
 
-### TESTER: b
-alpha(0)
-alpha(random.choice(np.array(range(0,5))))
+# ### TESTER: b
+# alpha(0)
+# alpha(random.choice(np.array(range(0,5))))
 
 ###
 # inserts or deletes a thinned event along with the GP value
@@ -153,22 +153,22 @@ def nthinSampler(lam, thisGP, locThin, valThin, locObs, valObs, Sigma):
 
     return(locThin, valThin, Sigma)
     
-### TESTER: nthinSampler
-newGP = GP(zeroMean,gaussianCov(1,1))
+# ### TESTER: nthinSampler
+# newGP = GP(zeroMean,gaussianCov(1,1))
 
-lam=25
-pointpo = PPP.randomHomog(lam)
+# lam=25
+# pointpo = PPP.randomHomog(lam)
 
-resGP = newGP.rGP(pointpo.loc) 
-Sigma = newGP.covMatrix(pointpo.loc)
+# resGP = newGP.rGP(pointpo.loc) 
+# Sigma = newGP.covMatrix(pointpo.loc)
 
 
-locThin = np.empty((0,2))
-valThin = np.empty((0,1))
+# locThin = np.empty((0,2))
+# valThin = np.empty((0,1))
 
     
-locThin, valThin, Sigma = nthinSampler(25, newGP, locThin, valThin, pointpo.loc, resGP,Sigma)    
-locThin, valThin 
+# locThin, valThin, Sigma = nthinSampler(25, newGP, locThin, valThin, pointpo.loc, resGP,Sigma)    
+# locThin, valThin 
 
 
 # ###
@@ -212,10 +212,10 @@ def jitterBeta(x,kappa):
     phi = kappa/min(x,1-x)
     return(beta.rvs(x*phi,(1-x)*phi))
 
-### TESTER: jitterBeta
-jitterBeta(0.5,10)
-jitterBeta(0.5,3)
-jitterBeta(0.9,10)
+# ### TESTER: jitterBeta
+# jitterBeta(0.5,10)
+# jitterBeta(0.5,3)
+# jitterBeta(0.9,10)
 
 
 ###
@@ -229,39 +229,39 @@ def kernelBeta(xNew,xOld,kappa):
     d1 = beta.pdf(xNew[:,1], xOld[:,1]*phi1, (1-xOld[:,1])*phi1)
     return(d0*d1)
 
-### TESTER: kernelBeta
-xOld = np.array([[0.5,0.5]])
-xNew = np.array([[0.6,0.6]])
-kappa = 10
+# ### TESTER: kernelBeta
+# xOld = np.array([[0.5,0.5]])
+# xNew = np.array([[0.6,0.6]])
+# kappa = 10
 
-kernelBeta(xNew, xOld, kappa)
-
-
-xOld = np.array([[0.5,0.5]])
-xNew = np.array([[0.7,0.7]])
-kappa = 10
-
-kernelBeta(xNew, xOld, kappa)
+# kernelBeta(xNew, xOld, kappa)
 
 
-xOld = np.array([[0.5,0.5]])
-xNew = np.array([[0.4,0.4]])
-kappa = 10
+# xOld = np.array([[0.5,0.5]])
+# xNew = np.array([[0.7,0.7]])
+# kappa = 10
 
-kernelBeta(xNew, xOld, kappa)
+# kernelBeta(xNew, xOld, kappa)
 
 
-xOld = np.array([[0.7,0.7]])
-xNew = np.array([[0.8,0.8]])
-kappa = 10
+# xOld = np.array([[0.5,0.5]])
+# xNew = np.array([[0.4,0.4]])
+# kappa = 10
 
-kernelBeta(xNew, xOld, kappa)
+# kernelBeta(xNew, xOld, kappa)
 
-xOld = np.array([[0.7,0.7]])
-xNew = np.array([[0.9,0.9]])
-kappa = 10
 
-kernelBeta(xNew, xOld, kappa)
+# xOld = np.array([[0.7,0.7]])
+# xNew = np.array([[0.8,0.8]])
+# kappa = 10
+
+# kernelBeta(xNew, xOld, kappa)
+
+# xOld = np.array([[0.7,0.7]])
+# xNew = np.array([[0.9,0.9]])
+# kappa = 10
+
+# kernelBeta(xNew, xOld, kappa)
 
 
 ###
@@ -294,25 +294,25 @@ def locationMove(kappa, thisGP, locThin, valThin, locObs, valObs, Sigma):
 
     return(locThin, valThin, Sigma)
 
-### TESTER locationMove
-kappa=10
-newGP = GP(zeroMean,gaussianCov(1,1))
+# ### TESTER locationMove
+# kappa=10
+# newGP = GP(zeroMean,gaussianCov(1,1))
 
-lam=4
-pointpo = PPP.randomHomog(lam)
+# lam=4
+# pointpo = PPP.randomHomog(lam)
 
-locThin = pointpo.loc
-valThin = newGP.rGP(pointpo.loc) 
+# locThin = pointpo.loc
+# valThin = newGP.rGP(pointpo.loc) 
 
-pointpo = PPP.randomHomog(lam)
+# pointpo = PPP.randomHomog(lam)
 
-locObs = pointpo.loc
-valObs = newGP.rCondGP(locObs, locThin, valThin) 
-Sigma = newGP.covMatrix(np.concatenate((locThin,locObs)))
-print(locThin, valThin) 
+# locObs = pointpo.loc
+# valObs = newGP.rCondGP(locObs, locThin, valThin) 
+# Sigma = newGP.covMatrix(np.concatenate((locThin,locObs)))
+# print(locThin, valThin) 
     
-locThinNew, valThinNew, Sigma = locationMove(kappa, newGP, locThin, valThin, locObs, valObs, Sigma)    
-print(locThinNew, valThinNew) 
+# locThinNew, valThinNew, Sigma = locationMove(kappa, newGP, locThin, valThin, locObs, valObs, Sigma)    
+# print(locThinNew, valThinNew) 
  
 
 
@@ -333,26 +333,26 @@ def birthDeathMove(lam, kappa, thisGP, locThin, valThin, locObs, valObs, Sigma):
     
     return(locThin, valThin, Sigma)
 
-### TESTER birthDeathMove
+# ### TESTER birthDeathMove
 
-kappa=10
-newGP = GP(zeroMean,gaussianCov(1,0.1))
+# kappa=10
+# newGP = GP(zeroMean,gaussianCov(1,0.1))
 
-lam=4
-pointpo = PPP.randomHomog(lam)
+# lam=4
+# pointpo = PPP.randomHomog(lam)
 
-locThin = pointpo.loc
-valThin = newGP.rGP(pointpo.loc) 
+# locThin = pointpo.loc
+# valThin = newGP.rGP(pointpo.loc) 
 
-pointpo = PPP.randomHomog(lam)
+# pointpo = PPP.randomHomog(lam)
 
-locObs = pointpo.loc
-valObs = newGP.rCondGP(locObs, locThin, valThin) 
-Sigma = newGP.covMatrix(np.concatenate((locThin,locObs)))
-print(locThin, valThin) 
+# locObs = pointpo.loc
+# valObs = newGP.rCondGP(locObs, locThin, valThin) 
+# Sigma = newGP.covMatrix(np.concatenate((locThin,locObs)))
+# print(locThin, valThin) 
     
-locThinNew, valThinNew, Sigma = birthDeathMove(lam, kappa, newGP, locThin, valThin, locObs, valObs, Sigma)    
-print(locThinNew, valThinNew)
+# locThinNew, valThinNew, Sigma = birthDeathMove(lam, kappa, newGP, locThin, valThin, locObs, valObs, Sigma)    
+# print(locThinNew, valThinNew)
 
 ###
 # loops through thinned points and proposes new locations and GP values
@@ -380,24 +380,24 @@ def locationSampler(kappa, thisGP, locThin, valThin, locObs, valObs):
         i+=1
     return(locThin, valThin)
 
-### TESTER locationSampler
-kappa=10
-newGP = GP(zeroMean,gaussianCov(1,1))
+# ### TESTER locationSampler
+# kappa=10
+# newGP = GP(zeroMean,gaussianCov(1,1))
 
-lam=10
-pointpo = PPP.randomHomog(lam)
+# lam=10
+# pointpo = PPP.randomHomog(lam)
 
-locThin = pointpo.loc
-valThin = newGP.rGP(pointpo.loc) 
+# locThin = pointpo.loc
+# valThin = newGP.rGP(pointpo.loc) 
 
-pointpo = PPP.randomHomog(lam)
+# pointpo = PPP.randomHomog(lam)
 
-locObs = pointpo.loc
-valObs = newGP.rCondGP(locObs, locThin, valThin) 
+# locObs = pointpo.loc
+# valObs = newGP.rCondGP(locObs, locThin, valThin) 
 
     
-locThin, valThin = locationSampler(kappa, newGP, locThin, valThin, locObs, valObs)    
-locThin, valThin 
+# locThin, valThin = locationSampler(kappa, newGP, locThin, valThin, locObs, valObs)    
+# locThin, valThin 
 
 ###
 # expit
@@ -406,11 +406,11 @@ locThin, valThin
 def expit(x):
     return(np.exp(x)/(1+np.exp(x)))
 
-### TESTER: expit
-arr = np.array([[1,2,3],[4,5,6],[7,8,9]])
-arr
+# ### TESTER: expit
+# arr = np.array([[1,2,3],[4,5,6],[7,8,9]])
+# arr
 
-expit(arr)
+# expit(arr)
 
 
 ###
@@ -423,22 +423,22 @@ def U(whiteVal, A, nthin):
            np.sum(np.log(1+np.exp(A[:nthin,:]@whiteVal))) +
            1/2*np.transpose(whiteVal)@whiteVal)
     
-### TESTER: U
-newGP = GP(zeroMean,gaussianCov(1,1))
+# ### TESTER: U
+# newGP = GP(zeroMean,gaussianCov(1,1))
 
-lam=10
-pointpo = PPP.randomHomog(lam) 
+# lam=10
+# pointpo = PPP.randomHomog(lam) 
 
-locTot = pointpo.loc
-Sigma = newGP.covMatrix(locTot)
-valTot = newGP.rGP(pointpo.loc)
+# locTot = pointpo.loc
+# Sigma = newGP.covMatrix(locTot)
+# valTot = newGP.rGP(pointpo.loc)
 
-nthin = 3
+# nthin = 3
 
-A = np.linalg.cholesky(Sigma)
-whiteVal = np.linalg.inv(A)@valTot
+# A = np.linalg.cholesky(Sigma)
+# whiteVal = np.linalg.inv(A)@valTot
 
-U(whiteVal,A,nthin)
+# U(whiteVal,A,nthin)
 
 ###
 # derivative of potential energy in whitened space (AA^T=Sigma) Thinned events are first in Sigma
@@ -450,22 +450,22 @@ def U_prime(whiteVal, A, nthin):
            np.transpose(np.transpose(expit(A[:nthin,:]@whiteVal))@A[:nthin,:]) +
            whiteVal)
 
-### TESTER: U_prime
-newGP = GP(zeroMean,gaussianCov(1,1))
+# ### TESTER: U_prime
+# newGP = GP(zeroMean,gaussianCov(1,1))
 
-lam=10
-pointpo = PPP.randomHomog(lam) 
+# lam=10
+# pointpo = PPP.randomHomog(lam) 
 
-locTot = pointpo.loc
-Sigma = newGP.covMatrix(locTot)
-valTot = newGP.rGP(pointpo.loc)
+# locTot = pointpo.loc
+# Sigma = newGP.covMatrix(locTot)
+# valTot = newGP.rGP(pointpo.loc)
 
-nthin = 3
+# nthin = 3
 
-A = np.linalg.cholesky(Sigma)
-whiteVal = np.linalg.inv(A)@valTot
+# A = np.linalg.cholesky(Sigma)
+# whiteVal = np.linalg.inv(A)@valTot
 
-U_prime(whiteVal,A,nthin)
+# U_prime(whiteVal,A,nthin)
 
 ###
 # sampling the GP values at the thinned and observed events
@@ -501,51 +501,51 @@ def functionSampler(delta,L,whiteVal,A,nthin):
     return(whiteVal)
 
 
-### TESTER: functionSampler
-newGP = GP(zeroMean,gaussianCov(1,1))
+# ### TESTER: functionSampler
+# newGP = GP(zeroMean,gaussianCov(1,1))
 
-lam=10
-pointpo = PPP.randomHomog(lam) 
+# lam=10
+# pointpo = PPP.randomHomog(lam) 
 
-locTot = pointpo.loc
-Sigma = newGP.covMatrix(locTot)
-valTot = newGP.rGP(pointpo.loc)
+# locTot = pointpo.loc
+# Sigma = newGP.covMatrix(locTot)
+# valTot = newGP.rGP(pointpo.loc)
 
-nthin = 3
-delta = 0.1
-L = 10
+# nthin = 3
+# delta = 0.1
+# L = 10
 
-A = np.linalg.cholesky(Sigma)
-whiteVal = np.linalg.inv(A)@valTot
+# A = np.linalg.cholesky(Sigma)
+# whiteVal = np.linalg.inv(A)@valTot
 
-valTot
-whiteVal = functionSampler(delta,L,whiteVal,A,nthin)
+# valTot
+# whiteVal = functionSampler(delta,L,whiteVal,A,nthin)
 
-A@whiteVal
+# A@whiteVal
 
 ### ###
 
-newGP = GP(zeroMean,gaussianCov(1,1))
+# newGP = GP(zeroMean,gaussianCov(1,1))
 
-lam=10
-pointpo = PPP.randomHomog(lam) 
+# lam=10
+# pointpo = PPP.randomHomog(lam) 
 
-locTot = np.array([[0.1,0.1],[0.2,0.2],[0.3,0.3],[0.8,0.8],[0.9,0.9]])
+# locTot = np.array([[0.1,0.1],[0.2,0.2],[0.3,0.3],[0.8,0.8],[0.9,0.9]])
                     
-Sigma = newGP.covMatrix(locTot)
-valTot = newGP.rGP(locTot)
+# Sigma = newGP.covMatrix(locTot)
+# valTot = newGP.rGP(locTot)
 
-nthin = 3
-delta = 0.1
-L = 10
+# nthin = 3
+# delta = 0.1
+# L = 10
 
-A = np.linalg.cholesky(Sigma)
-whiteVal = np.linalg.inv(A)@valTot
+# A = np.linalg.cholesky(Sigma)
+# whiteVal = np.linalg.inv(A)@valTot
 
-valTot
-whiteVal = functionSampler(delta,L,whiteVal,A,nthin)
+# valTot
+# whiteVal = functionSampler(delta,L,whiteVal,A,nthin)
 
-A@whiteVal
+# A@whiteVal
 
 
 ###
@@ -559,11 +559,11 @@ def intensitySampler(mu,sigma2,ntot):
     return(lam)
 
 
-### TESTER: intensity sampler
-mu = 100
-sigma2 = 100
+# ### TESTER: intensity sampler
+# mu = 100
+# sigma2 = 100
 
-intensitySampler(mu,sigma2,500)
+# intensitySampler(mu,sigma2,500)
 
 ###
 # full sampler of thinned locations, thinned values, observed values and intensity
@@ -637,273 +637,273 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
 
 
 
-def fct(x):
-    return(np.exp((-x[:,0]**2-x[:,1]**2)/0.3))
 # def fct(x):
-#     return(np.exp(-(0.25-np.sqrt((x[:,0]-0.5)**2+(x[:,1]-0.5)**2))**2/0.003)*0.8+0.10)
-# def fct(x):
-#     return(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.007)*0.8+0.10)
+#     return(np.exp((-x[:,0]**2-x[:,1]**2)/0.3))
+# # def fct(x):
+# #     return(np.exp(-(0.25-np.sqrt((x[:,0]-0.5)**2+(x[:,1]-0.5)**2))**2/0.003)*0.8+0.10)
+# # def fct(x):
+# #     return(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.007)*0.8+0.10)
 
-lam_sim=1000
+# lam_sim=600
 
-pointpo = PPP.randomNonHomog(lam_sim,fct)
-pointpo.plot()
+# pointpo = PPP.randomNonHomog(lam_sim,fct)
+# pointpo.plot()
 
 
-newGP = GP(zeroMean,gaussianCov(2,0.5))
+# newGP = GP(zeroMean,gaussianCov(2,0.5))
 
-niter=1000
+# niter=100
 
-import time
+# import time
 
-t0 = time.time()
-thinLoc,thinVal,obsVal,lams = MCMCadams(niter,1000,newGP,pointpo,100,10,0.1,10,1000,1000)
-t1 = time.time()
+# t0 = time.time()
+# thinLoc,thinVal,obsVal,lams = MCMCadams(niter,1000,newGP,pointpo,100,10,0.1,10,1000,1000)
+# t1 = time.time()
 
-total1 = t1-t0
+# total1 = t1-t0
 
-i=0
-while(i < niter):
+# i=0
+# while(i < niter):
 
 
     
 
     
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.set_aspect('equal')
+#     fig = plt.figure()
+#     ax = fig.add_subplot(111)
+#     ax.set_aspect('equal')
     
-    plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1])
-    plt.scatter(thinLoc[i][:,0],thinLoc[i][:,1])
-    
-
-    plt.xlim(0,1)
-    plt.ylim(0,1)
-
-    plt.show()
-    
-    
-    fig.savefig("Scatter"+str(i)+".pdf", bbox_inches='tight')
-    i+=1
-
-def makeGrid(xlim,ylim,res):
-    grid = np.ndarray((res**2,2))
-    xlo = xlim[0]
-    xhi = xlim[1]
-    xrange = xhi - xlo
-    ylo = ylim[0]
-    yhi = ylim[1]
-    yrange = yhi - ylo
-    xs = np.arange(xlo, xhi, step=xrange/res) + xrange/res*0.5
-    ys = np.arange(ylo, yhi, step=yrange/res) + yrange/res*0.5
-    i=0
-    for x in xs:
-        j=0
-        for y in ys:
-            grid[i*res+j,:] = [x,y]
-            j+=1
-        i+=1
-    return(grid)
-
-
-res = 30
-gridLoc = makeGrid([0,1], [0,1], res)
-
-
-
-resGP = np.empty(shape=niter,dtype=np.ndarray)
-i=0
-t0 = time.time()
-while(i < niter):
-    resGP[i] = lams[i]*expit(newGP.rCondGP(gridLoc,np.concatenate((thinLoc[i],pointpo.loc)),
-              np.concatenate((thinVal[i],obsVal[i]))))
-    print(i)
-    i+=1
-t1 = time.time()
-
-total2 = t1-t0
-
-meanGP = np.mean(resGP)
-
-
-#### to make plot ####
-
-imGP = np.transpose(meanGP.reshape(res,res))
-
-x = np.linspace(0,1, res+1) 
-y = np.linspace(0,1, res+1) 
-X, Y = np.meshgrid(x,y) 
-
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.set_aspect('equal')
-
-plt.pcolormesh(X,Y,imGP, cmap='cool')
-
-plt.xlim(0,1)
-plt.ylim(0,1)
-plt.colorbar()
-
-plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
-
-plt.show()
-fig.savefig("meanInt.pdf", bbox_inches='tight')
-
-
-#### plot of actual intensity ####
-
-realInt = lam_sim*fct(gridLoc)
-
-#### to make plot ####
-
-imGP = np.transpose(realInt.reshape(res,res))
-
-x = np.linspace(0,1, res+1) 
-y = np.linspace(0,1, res+1) 
-X, Y = np.meshgrid(x,y) 
-
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.set_aspect('equal')
-
-plt.pcolormesh(X,Y,imGP, cmap='cool')
-
-plt.xlim(0,1)
-plt.ylim(0,1)
-plt.colorbar()
-plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
-
-plt.show()
-fig.savefig("trueInt.pdf", bbox_inches='tight')
-
-
-#### first iteration ###
-
-
-
-#### to make plot ####
-
-imGP = np.transpose(resGP[0].reshape(res,res))
-
-x = np.linspace(0,1, res+1) 
-y = np.linspace(0,1, res+1) 
-X, Y = np.meshgrid(x,y) 
-
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.set_aspect('equal')
-
-plt.pcolormesh(X,Y,imGP, cmap='cool')
-
-plt.xlim(0,1)
-plt.ylim(0,1)
-plt.colorbar()
-plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
-
-plt.show()
-fig.savefig("initInt.pdf", bbox_inches='tight')
-
-
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.set_aspect('equal')
-
-plt.scatter(thinLoc[0][:,0],thinLoc[0][:,1])
-
-
-plt.xlim(0,1)
-plt.ylim(0,1)
-
-plt.show()
-fig.savefig("initScatter.pdf", bbox_inches='tight')
-
-#### last iteration ###
-
-
-
-
-
-
-#### to make plot ####
-
-imGP = np.transpose(resGP[niter-1].reshape(res,res))
-
-x = np.linspace(0,1, res+1) 
-y = np.linspace(0,1, res+1) 
-X, Y = np.meshgrid(x,y) 
-
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.set_aspect('equal')
-
-plt.pcolormesh(X,Y,imGP, cmap='cool')
-
-plt.xlim(0,1)
-plt.ylim(0,1)
-plt.colorbar()
-plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
-
-plt.show()
-fig.savefig("finInt.pdf", bbox_inches='tight')
-
-
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.set_aspect('equal')
-
-plt.scatter(thinLoc[niter-1][:,0],thinLoc[niter-1][:,1])
-
-plt.xlim(0,1)
-plt.ylim(0,1)
-
-plt.show()
-fig.savefig("finScatter.pdf", bbox_inches='tight')
-
-
-
-### every iteration ###
-
-i=0
-while(i < niter):
-
-
-    
-    imGP = np.transpose(resGP[i].reshape(res,res))
-    
-    x = np.linspace(0,1, res+1) 
-    y = np.linspace(0,1, res+1) 
-    X, Y = np.meshgrid(x,y) 
-    
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.set_aspect('equal')
-    
-    plt.pcolormesh(X,Y,imGP, cmap='cool')
-    
-    plt.xlim(0,1)
-    plt.ylim(0,1)
-    plt.colorbar()
-    plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
-    
-    plt.show()
-    fig.savefig("Int"+str(i)+".pdf", bbox_inches='tight')
-    
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.set_aspect('equal')
-    
-    plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1])
-    plt.scatter(thinLoc[i][:,0],thinLoc[i][:,1])
+#     plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1])
+#     plt.scatter(thinLoc[i][:,0],thinLoc[i][:,1])
     
 
-    plt.xlim(0,1)
-    plt.ylim(0,1)
+#     plt.xlim(0,1)
+#     plt.ylim(0,1)
 
-    plt.show()
+#     plt.show()
     
     
-    fig.savefig("Scatter"+str(i)+".pdf", bbox_inches='tight')
-    i+=1
+#     fig.savefig("Scatter"+str(i)+".pdf", bbox_inches='tight')
+#     i+=1
+
+# def makeGrid(xlim,ylim,res):
+#     grid = np.ndarray((res**2,2))
+#     xlo = xlim[0]
+#     xhi = xlim[1]
+#     xrange = xhi - xlo
+#     ylo = ylim[0]
+#     yhi = ylim[1]
+#     yrange = yhi - ylo
+#     xs = np.arange(xlo, xhi, step=xrange/res) + xrange/res*0.5
+#     ys = np.arange(ylo, yhi, step=yrange/res) + yrange/res*0.5
+#     i=0
+#     for x in xs:
+#         j=0
+#         for y in ys:
+#             grid[i*res+j,:] = [x,y]
+#             j+=1
+#         i+=1
+#     return(grid)
+
+
+# res = 30
+# gridLoc = makeGrid([0,1], [0,1], res)
+
+
+
+# resGP = np.empty(shape=niter,dtype=np.ndarray)
+# i=0
+# t0 = time.time()
+# while(i < niter):
+#     resGP[i] = lams[i]*expit(newGP.rCondGP(gridLoc,np.concatenate((thinLoc[i],pointpo.loc)),
+#               np.concatenate((thinVal[i],obsVal[i]))))
+#     print(i)
+#     i+=1
+# t1 = time.time()
+
+# total2 = t1-t0
+
+# meanGP = np.mean(resGP)
+
+
+# #### to make plot ####
+
+# imGP = np.transpose(meanGP.reshape(res,res))
+
+# x = np.linspace(0,1, res+1) 
+# y = np.linspace(0,1, res+1) 
+# X, Y = np.meshgrid(x,y) 
+
+# fig = plt.figure()
+# ax = fig.add_subplot(111)
+# ax.set_aspect('equal')
+
+# plt.pcolormesh(X,Y,imGP, cmap='cool')
+
+# plt.xlim(0,1)
+# plt.ylim(0,1)
+# plt.colorbar()
+
+# plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
+
+# plt.show()
+# fig.savefig("meanInt.pdf", bbox_inches='tight')
+
+
+# #### plot of actual intensity ####
+
+# realInt = lam_sim*fct(gridLoc)
+
+# #### to make plot ####
+
+# imGP = np.transpose(realInt.reshape(res,res))
+
+# x = np.linspace(0,1, res+1) 
+# y = np.linspace(0,1, res+1) 
+# X, Y = np.meshgrid(x,y) 
+
+# fig = plt.figure()
+# ax = fig.add_subplot(111)
+# ax.set_aspect('equal')
+
+# plt.pcolormesh(X,Y,imGP, cmap='cool')
+
+# plt.xlim(0,1)
+# plt.ylim(0,1)
+# plt.colorbar()
+# plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
+
+# plt.show()
+# fig.savefig("trueInt.pdf", bbox_inches='tight')
+
+
+# #### first iteration ###
+
+
+
+# #### to make plot ####
+
+# imGP = np.transpose(resGP[0].reshape(res,res))
+
+# x = np.linspace(0,1, res+1) 
+# y = np.linspace(0,1, res+1) 
+# X, Y = np.meshgrid(x,y) 
+
+# fig = plt.figure()
+# ax = fig.add_subplot(111)
+# ax.set_aspect('equal')
+
+# plt.pcolormesh(X,Y,imGP, cmap='cool')
+
+# plt.xlim(0,1)
+# plt.ylim(0,1)
+# plt.colorbar()
+# plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
+
+# plt.show()
+# fig.savefig("initInt.pdf", bbox_inches='tight')
+
+
+# fig = plt.figure()
+# ax = fig.add_subplot(111)
+# ax.set_aspect('equal')
+
+# plt.scatter(thinLoc[0][:,0],thinLoc[0][:,1])
+
+
+# plt.xlim(0,1)
+# plt.ylim(0,1)
+
+# plt.show()
+# fig.savefig("initScatter.pdf", bbox_inches='tight')
+
+# #### last iteration ###
+
+
+
+
+
+
+# #### to make plot ####
+
+# imGP = np.transpose(resGP[niter-1].reshape(res,res))
+
+# x = np.linspace(0,1, res+1) 
+# y = np.linspace(0,1, res+1) 
+# X, Y = np.meshgrid(x,y) 
+
+# fig = plt.figure()
+# ax = fig.add_subplot(111)
+# ax.set_aspect('equal')
+
+# plt.pcolormesh(X,Y,imGP, cmap='cool')
+
+# plt.xlim(0,1)
+# plt.ylim(0,1)
+# plt.colorbar()
+# plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
+
+# plt.show()
+# fig.savefig("finInt.pdf", bbox_inches='tight')
+
+
+# fig = plt.figure()
+# ax = fig.add_subplot(111)
+# ax.set_aspect('equal')
+
+# plt.scatter(thinLoc[niter-1][:,0],thinLoc[niter-1][:,1])
+
+# plt.xlim(0,1)
+# plt.ylim(0,1)
+
+# plt.show()
+# fig.savefig("finScatter.pdf", bbox_inches='tight')
+
+
+
+# ### every iteration ###
+
+# i=0
+# while(i < niter):
+
+
+    
+#     imGP = np.transpose(resGP[i].reshape(res,res))
+    
+#     x = np.linspace(0,1, res+1) 
+#     y = np.linspace(0,1, res+1) 
+#     X, Y = np.meshgrid(x,y) 
+    
+#     fig = plt.figure()
+#     ax = fig.add_subplot(111)
+#     ax.set_aspect('equal')
+    
+#     plt.pcolormesh(X,Y,imGP, cmap='cool')
+    
+#     plt.xlim(0,1)
+#     plt.ylim(0,1)
+#     plt.colorbar()
+#     plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
+    
+#     plt.show()
+#     fig.savefig("Int"+str(i)+".pdf", bbox_inches='tight')
+    
+#     fig = plt.figure()
+#     ax = fig.add_subplot(111)
+#     ax.set_aspect('equal')
+    
+#     plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1])
+#     plt.scatter(thinLoc[i][:,0],thinLoc[i][:,1])
+    
+
+#     plt.xlim(0,1)
+#     plt.ylim(0,1)
+
+#     plt.show()
+    
+    
+#     fig.savefig("Scatter"+str(i)+".pdf", bbox_inches='tight')
+#     i+=1
 
 # ###
 # # full sampler of thinned locations, thinned values, observed values and intensity

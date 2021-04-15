@@ -42,14 +42,14 @@ def makeGrid(xlim,ylim,res):
     return(grid)
 
 
-res = 50
+res = 5
 gridLoc = makeGrid([0,1], [0,1], res)
 
 
-    
-
-
 newGP = GP(zeroMean,gaussianCov(1,1))
+
+newGP.covMatrix(gridLoc)
+
 
 resGP = newGP.rGP(gridLoc)
 

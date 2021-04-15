@@ -9,6 +9,7 @@ import numpy as np
 from numpy import random
 import numpy.linalg
 import numpy.matlib
+from scipy.spatial import distance_matrix
 
 
 
@@ -33,17 +34,7 @@ class GP:
     
     
     def covMatrix(self, loc):
-        nloc = loc.shape[0]
-        Sigma = np.matlib.zeros((nloc,nloc))
-        i=0
-        while i < nloc:
-            j=0
-            while j <=i:
-                Sigma[i,j] = self.cov(loc[i],loc[j])
-                Sigma[j,i] = Sigma[i,j]
-                j+=1
-            i+=1
-        return(Sigma)
+        return(self.cov(loc,loc))
     
     def rGP(self, loc):
         Sigma = self.covMatrix(loc)
@@ -83,17 +74,13 @@ class GP:
         # mu = self.meanVec(loc)
         
 
-        nlocObs = locObs.shape[0]
+        # nlocObs = locObs.shape[0]
         
         # mu1 = mu[0:nlocPred]
         # mu2 = mu[nlocPred:nloc]
         
         Sigma11 = self.cov(locPred,locPred)
-        Sigma12 =  np.matlib.zeros((1,nlocObs))
-        i=0
-        while i<nlocObs:
-            Sigma12[0,i] = self.cov(locPred,locObs[i])
-            i+=1
+        Sigma12 =  self.cov(locPred,locObs)
         Sigma21 = np.transpose(Sigma12)
         Sigma22 = Sigma
         
@@ -112,7 +99,7 @@ class GP:
     
 def gaussianCov(sigma2,l):
     def evalCov(x,y):
-        return(sigma2*np.exp(-np.linalg.norm(x-y)/l))
+        return(sigma2*np.exp(-distance_matrix(x,y)/l))
     return(evalCov)
 
 def indCov(sigma2):
@@ -129,7 +116,8 @@ def rMultNorm(n,mu,Sigma):
     return(np.matmul(L,Z)+mu)
     
     
-    
+def zeroMean(x):
+    return(0) 
     
     
     
