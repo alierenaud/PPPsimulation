@@ -7,6 +7,7 @@ Created on Tue Apr  6 13:10:04 2021
 
 import numpy as np
 import numpy.linalg
+import scipy as sp
 from rGP import GP
 from rGP import gaussianCov
 from rppp import PPP
@@ -18,7 +19,7 @@ def zeroMean(x):
 
 
 thisGP = GP(zeroMean,gaussianCov(2,0.5))
-lam=1000
+lam=2000
 
 pointpo = PPP.randomHomog(lam)
 pointpo.plot()
@@ -86,7 +87,7 @@ Sigma_inv
 
 
 thisGP = GP(zeroMean,gaussianCov(2,0.5))
-lam=20000
+lam=2000
 
 pointpo = PPP.randomHomog(lam)
 pointpo.plot()
@@ -146,6 +147,55 @@ Sigma_del_inv_wood = woodDelInv(Sigma,Sigma_inv,i)
 t1 = time.time()
 
 total2 = t1-t0
+
+
+#### cholesky vs inv vs solve
+
+thisGP = GP(zeroMean,gaussianCov(2,0.5))
+lam=2000
+
+pointpo = PPP.randomHomog(lam)
+pointpo.plot()
+
+n = pointpo.loc.shape[0]
+
+import time
+
+t0 = time.time()
+Sigma = thisGP.covMatrix(pointpo.loc)
+t1 = time.time()
+
+total0 = t1-t0
+total0
+
+
+t0 = time.time()
+Sigma_inv = np.linalg.inv(Sigma)
+t1 = time.time()
+
+total1 = t1-t0
+total1
+
+
+t0 = time.time()
+A = np.linalg.cholesky(Sigma)
+t1 = time.time()
+
+total2 = t1-t0
+total2
+
+
+t0 = time.time()
+A_inv = sp.linalg.solve_triangular(A,np.identity(n),lower=True)
+t1 = time.time()
+
+total3 = t1-t0
+total3
+
+A_inv@A
+
+
+
 
 
 
