@@ -29,7 +29,7 @@ pointpo.plot()
 
 newGP = GP(zeroMean,gaussianCov(2,0.5))
 
-niter=10
+niter=30
 
 import time
 

@@ -31,13 +31,13 @@ import scipy as sp
 # along with the its conditionnal GP value
 ###
 
-def insProp(thisGP, locObs, valObs, Sigma):
+def insProp(thisGP, locObs, valObs, Sigma, Sigma_inv):
     
     newLoc =  random.uniform(size=(1, 2))
     
-    valNewLoc, newSigma = thisGP.rCondGP1DSigma(newLoc, locObs, valObs, Sigma)
+    valNewLoc, newSigma, newSigma_inv = thisGP.rCondGP1DSigma(newLoc, locObs, valObs, Sigma, Sigma_inv)
     
-    return(newLoc, valNewLoc, newSigma)
+    return(newLoc, valNewLoc, newSigma, newSigma_inv)
 
 
 
@@ -115,10 +115,33 @@ def alpha(nthin):
 # alpha(random.choice(np.array(range(0,5))))
 
 ###
+# inversion of inside block of matrix
+###
+
+def woodDelInv(Sigma,Sigma_inv,i):
+    
+    n = Sigma.shape[0]
+
+    V = np.concatenate(([Sigma[i,:]],[np.zeros(n)]))
+    V[:,i] = [0,1] 
+
+    U = np.transpose(V)[:,::-1]
+    
+
+    B_inv = Sigma_inv + Sigma_inv@U@np.linalg.inv(np.identity(2)-V@Sigma_inv@U)@V@Sigma_inv
+
+    B_inv_del = np.delete(np.delete(B_inv,i,0),i,1)
+
+
+    
+    return(B_inv_del)
+
+
+###
 # inserts or deletes a thinned event along with the GP value
 ###
 
-def nthinSampler(lam, thisGP, locThin, valThin, locObs, valObs, Sigma):
+def nthinSampler(lam, thisGP, locThin, valThin, locObs, valObs, Sigma, Sigma_inv):
     
     nthin = locThin.shape[0]
     
@@ -128,7 +151,7 @@ def nthinSampler(lam, thisGP, locThin, valThin, locObs, valObs, Sigma):
         locTot = np.concatenate((locThin, locObs))
         valTot = np.concatenate((valThin, valObs))
         
-        newLoc, newVal, newSigma = insProp(thisGP, locTot, valTot, Sigma)
+        newLoc, newVal, newSigma, newSigma_inv = insProp(thisGP, locTot, valTot, Sigma, Sigma_inv)
         
         acc_ins = (1-b(nthin+1))/b(nthin)*lam/(nthin+1)/(1+np.exp(newVal))
         
@@ -138,6 +161,7 @@ def nthinSampler(lam, thisGP, locThin, valThin, locObs, valObs, Sigma):
             locThin = np.concatenate((newLoc, locThin))
             valThin = np.concatenate((newVal, valThin))
             Sigma=newSigma
+            Sigma_inv=newSigma_inv
     else:
         oldVal, newThinLocs, newThinVal, delInd = delProp(locThin, valThin)
         
@@ -148,10 +172,12 @@ def nthinSampler(lam, thisGP, locThin, valThin, locObs, valObs, Sigma):
         if U < acc_del:
             locThin = newThinLocs
             valThin = newThinVal
+            Sigma_inv = woodDelInv(Sigma,Sigma_inv,delInd)
             Sigma = np.delete(np.delete(Sigma, delInd, 0), delInd, 1)
             
+            
 
-    return(locThin, valThin, Sigma)
+    return(locThin, valThin, Sigma, Sigma_inv)
     
 # ### TESTER: nthinSampler
 # newGP = GP(zeroMean,gaussianCov(1,1))
@@ -268,7 +294,7 @@ def kernelBeta(xNew,xOld,kappa):
 # Jitters one of the point process location and resamples the GP at said location
 ###
 
-def locationMove(kappa, thisGP, locThin, valThin, locObs, valObs, Sigma):
+def locationMove(kappa, thisGP, locThin, valThin, locObs, valObs, Sigma, Sigma_inv):
 
     nlocThin = locThin.shape[0]
     
@@ -279,7 +305,7 @@ def locationMove(kappa, thisGP, locThin, valThin, locObs, valObs, Sigma):
 
     locTot = np.concatenate((locThin, locObs))
     valTot = np.concatenate((valThin, valObs))
-    newVal, newSigma = thisGP.rCondGP1DSigma(newLoc, locTot, valTot, Sigma)
+    newVal, newSigma, newSigma_inv = thisGP.rCondGP1DSigma(newLoc, locTot, valTot, Sigma, Sigma_inv)
     
     acc_loc = kernelBeta(moveLoc, newLoc, kappa)/(1+np.exp(newVal))*(1+np.exp(valThin[moveInd]))/kernelBeta(newLoc, moveLoc, kappa) 
         
@@ -291,8 +317,9 @@ def locationMove(kappa, thisGP, locThin, valThin, locObs, valObs, Sigma):
         locThin = np.concatenate((newLoc, locThin))
         valThin = np.concatenate((newVal, valThin))
         Sigma = np.delete(np.delete(newSigma, moveInd+1, 0), moveInd+1, 1)
+        Sigma_inv = woodDelInv(newSigma, newSigma_inv, moveInd+1)
 
-    return(locThin, valThin, Sigma)
+    return(locThin, valThin, Sigma, Sigma_inv)
 
 # ### TESTER locationMove
 # kappa=10
@@ -320,18 +347,18 @@ def locationMove(kappa, thisGP, locThin, valThin, locObs, valObs, Sigma):
 # Combines a mixture of birth-death-move type of samplers
 ###
 
-def birthDeathMove(lam, kappa, thisGP, locThin, valThin, locObs, valObs, Sigma):
+def birthDeathMove(lam, kappa, thisGP, locThin, valThin, locObs, valObs, Sigma, Sigma_inv):
     
     nthin = locThin.shape[0]
     
     A = random.binomial(1,alpha(nthin),1)
     
     if A:
-        locThin, valThin, Sigma = nthinSampler(lam, thisGP, locThin, valThin, locObs, valObs, Sigma)
+        locThin, valThin, Sigma, Sigma_inv = nthinSampler(lam, thisGP, locThin, valThin, locObs, valObs, Sigma, Sigma_inv)
     else:
-        locThin, valThin, Sigma = locationMove(kappa, thisGP, locThin, valThin, locObs, valObs, Sigma)
+        locThin, valThin, Sigma, Sigma_inv = locationMove(kappa, thisGP, locThin, valThin, locObs, valObs, Sigma, Sigma_inv)
     
-    return(locThin, valThin, Sigma)
+    return(locThin, valThin, Sigma, Sigma_inv)
 
 # ### TESTER birthDeathMove
 
@@ -583,6 +610,7 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
     nthin = thinLoc[0].shape[0]
     locTot = np.concatenate((thinLoc[0],thisPPP.loc))
     Sigma = thisGP.covMatrix(locTot)
+    Sigma_inv = np.linalg.inv(Sigma)
     nloc = locTot.shape[0]
     
     totVal = rMultNorm(nloc,0,Sigma)
@@ -593,14 +621,14 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
     
     i=1
     while i < size:
-        locThin_prime, valThin_prime, Sigma = birthDeathMove(lams[i-1],kappa,thisGP,
+        locThin_prime, valThin_prime, Sigma, Sigma_inv = birthDeathMove(lams[i-1],kappa,thisGP,
                                                     thinLoc[i-1],thinVal[i-1],
-                                                    thisPPP.loc,obsVal[i-1],Sigma)
+                                                    thisPPP.loc,obsVal[i-1],Sigma, Sigma_inv)
         j=1
         while j < nInsDelMov:
-            locThin_prime, valThin_prime, Sigma = birthDeathMove(lams[i-1],kappa,thisGP,
+            locThin_prime, valThin_prime, Sigma, Sigma_inv = birthDeathMove(lams[i-1],kappa,thisGP,
                                                     locThin_prime, valThin_prime,
-                                                    thisPPP.loc,obsVal[i-1],Sigma)
+                                                    thisPPP.loc,obsVal[i-1],Sigma, Sigma_inv)
             j+=1
         
 
@@ -624,7 +652,7 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
         thinVal[i] = valTot_prime[:nthin,:]
         obsVal[i] = valTot_prime[nthin:,:]
         
-        ntot = valTot_prime.shape[0]
+        # ntot = valTot_prime.shape[0]
         
         lams[i] = intensitySampler(mu,sigma2,ntot)
         
@@ -638,10 +666,10 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
 
 
 
-def fct(x):
-    return(np.exp((-x[:,0]**2-x[:,1]**2)/0.3))
 # def fct(x):
-#     return(np.exp(-(0.25-np.sqrt((x[:,0]-0.5)**2+(x[:,1]-0.5)**2))**2/0.003)*0.8+0.10)
+#     return(np.exp((-x[:,0]**2-x[:,1]**2)/0.3))
+def fct(x):
+    return(np.exp(-(0.25-np.sqrt((x[:,0]-0.5)**2+(x[:,1]-0.5)**2))**2/0.003)*0.8+0.10)
 # def fct(x):
 #     return(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.007)*0.8+0.10)
 
@@ -653,12 +681,12 @@ pointpo.plot()
 
 newGP = GP(zeroMean,gaussianCov(2,0.5))
 
-niter=30
+niter=250
 
 import time
 
 t0 = time.time()
-thinLoc,thinVal,obsVal,lams = MCMCadams(niter,1000,newGP,pointpo,100,10,0.1,10,1000,10000)
+thinLoc,thinVal,obsVal,lams = MCMCadams(niter,1000,newGP,pointpo,200,10,0.1,10,1000,10000)
 t1 = time.time()
 
 total1 = t1-t0
@@ -707,7 +735,7 @@ def makeGrid(xlim,ylim,res):
     return(grid)
 
 
-res = 50
+res = 100
 gridLoc = makeGrid([0,1], [0,1], res)
 
 
@@ -748,7 +776,7 @@ plt.colorbar()
 plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
 
 plt.show()
-fig.savefig("meanInt.pdf", bbox_inches='tight')
+# fig.savefig("meanInt.pdf", bbox_inches='tight')
 
 
 #### plot of actual intensity ####
@@ -775,7 +803,7 @@ plt.colorbar()
 plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
 
 plt.show()
-fig.savefig("trueInt.pdf", bbox_inches='tight')
+# fig.savefig("trueInt.pdf", bbox_inches='tight')
 
 
 
@@ -805,7 +833,16 @@ while(i < niter):
     plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
     
     plt.show()
-    fig.savefig("Int"+str(i)+".pdf", bbox_inches='tight')
+    # fig.savefig("Int"+str(i)+".pdf", bbox_inches='tight')
+    i+=1
+    
+    
+i=0
+while(i < niter):
+
+
+    
+
     
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -821,7 +858,7 @@ while(i < niter):
     plt.show()
     
     
-    fig.savefig("Scatter"+str(i)+".pdf", bbox_inches='tight')
+    # fig.savefig("Scatter"+str(i)+".pdf", bbox_inches='tight')
     i+=1
 
 # ###

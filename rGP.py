@@ -11,6 +11,25 @@ import numpy.linalg
 import numpy.matlib
 from scipy.spatial import distance_matrix
 
+### inversion utilities
+
+def blockwiseInv(Sigma,Sigma22_inv):
+
+    A = np.array([[Sigma[0,0]]])
+    B = np.array([Sigma[0,1:Sigma.shape[0]]])
+    C = np.transpose(B)
+
+
+    BD = B@Sigma22_inv
+    BDC = BD@C
+    DC = np.transpose(BD)
+    AmBDC = 1/(A-BDC) 
+    AmBDCBD = AmBDC@BD
+
+    Sigma_inv = np.block([[AmBDC,-AmBDCBD],[-DC@AmBDC,Sigma22_inv + DC@AmBDCBD]])
+    
+    return(Sigma_inv)
+
 
 
 
@@ -46,14 +65,14 @@ class GP:
     def rCondGP(self, locPred, locObs, valObs):
         loc = np.concatenate((locPred, locObs))
         Sigma = self.covMatrix(loc)
-        mu = self.meanVec(loc)
+        # mu = self.meanVec(loc)
         
         nlocPred = locPred.shape[0]
         nlocObs = locObs.shape[0]
         nloc = nlocPred + nlocObs
         
-        mu1 = mu[0:nlocPred]
-        mu2 = mu[nlocPred:nloc]
+        # mu1 = mu[0:nlocPred]
+        # mu2 = mu[nlocPred:nloc]
         
         Sigma11 = Sigma[0:nlocPred, 0:nlocPred]
         Sigma12 = Sigma[0:nlocPred, nlocPred:nloc]
@@ -62,14 +81,14 @@ class GP:
         
         invSigma22 = np.linalg.inv(Sigma22)
         
-        mu1c2 = mu1 + np.matmul(np.matmul(Sigma12,invSigma22),  valObs-mu2)
+        mu1c2 = np.matmul(np.matmul(Sigma12,invSigma22),  valObs)
         Sigma1c2 = Sigma11 - np.matmul(np.matmul(Sigma12,invSigma22),  Sigma21)
         
         L = np.linalg.cholesky(Sigma1c2)
         Z = random.normal(size=(nlocPred,1))
         return(np.matmul(L,Z)+mu1c2)
     
-    def rCondGP1DSigma(self, locPred, locObs, valObs, Sigma):
+    def rCondGP1DSigma(self, locPred, locObs, valObs, Sigma, Sigma_inv):
 
         # mu = self.meanVec(loc)
         
@@ -86,14 +105,16 @@ class GP:
         
         newSigma = np.block([[Sigma11,Sigma12],[Sigma21,Sigma22]])
         
-        invSigma22 = np.linalg.inv(Sigma22)
+        invSigma22 = Sigma_inv
+        
+        newSigma_inv = blockwiseInv(newSigma,Sigma_inv)
         
         mu1c2 = Sigma12@invSigma22@valObs
         Sigma1c2 = Sigma11 - Sigma12@invSigma22@Sigma21
         
         L = np.linalg.cholesky(Sigma1c2)
         Z = random.normal(size=(1,1))
-        return(np.matmul(L,Z)+mu1c2, newSigma)
+        return(np.matmul(L,Z)+mu1c2, newSigma, newSigma_inv)
 
     
     
