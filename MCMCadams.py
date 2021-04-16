@@ -666,10 +666,10 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
 
 
 
-# def fct(x):
-#     return(np.exp((-x[:,0]**2-x[:,1]**2)/0.3))
 def fct(x):
-    return(np.exp(-(0.25-np.sqrt((x[:,0]-0.5)**2+(x[:,1]-0.5)**2))**2/0.003)*0.8+0.10)
+     return(np.exp((-x[:,0]**2-x[:,1]**2)/0.3)*0.8+0.10)
+# def fct(x):
+#     return(np.exp(-(0.25-np.sqrt((x[:,0]-0.5)**2+(x[:,1]-0.5)**2))**2/0.003)*0.8+0.10)
 # def fct(x):
 #     return(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.007)*0.8+0.10)
 
@@ -681,12 +681,12 @@ pointpo.plot()
 
 newGP = GP(zeroMean,gaussianCov(2,0.5))
 
-niter=300
+niter=100
 
 import time
 
 t0 = time.time()
-thinLoc,thinVal,obsVal,lams = MCMCadams(niter,1000,newGP,pointpo,100,10,0.1,10,1000,10000)
+thinLoc,thinVal,obsVal,lams = MCMCadams(niter,1150,newGP,pointpo,100,10,0.1,10,1300,1000)
 t1 = time.time()
 
 total1 = t1-t0
@@ -735,7 +735,7 @@ def makeGrid(xlim,ylim,res):
     return(grid)
 
 
-res = 70
+res = 50
 gridLoc = makeGrid([0,1], [0,1], res)
 
 
