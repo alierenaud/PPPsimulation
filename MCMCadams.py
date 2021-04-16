@@ -681,12 +681,12 @@ pointpo.plot()
 
 newGP = GP(zeroMean,gaussianCov(2,0.5))
 
-niter=250
+niter=300
 
 import time
 
 t0 = time.time()
-thinLoc,thinVal,obsVal,lams = MCMCadams(niter,1000,newGP,pointpo,200,10,0.1,10,1000,10000)
+thinLoc,thinVal,obsVal,lams = MCMCadams(niter,1000,newGP,pointpo,100,10,0.1,10,1000,10000)
 t1 = time.time()
 
 total1 = t1-t0
@@ -735,7 +735,7 @@ def makeGrid(xlim,ylim,res):
     return(grid)
 
 
-res = 100
+res = 70
 gridLoc = makeGrid([0,1], [0,1], res)
 
 
