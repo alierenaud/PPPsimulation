@@ -690,7 +690,7 @@ pointpo.plot()
 
 newGP = GP(zeroMean,gaussianCov(2,0.5))
 
-niter=300
+niter=1000
 
 import time
 
@@ -841,8 +841,8 @@ while(i < niter):
     plt.colorbar()
     plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
     
-    plt.show()
-    # fig.savefig("Int"+str(i)+".pdf", bbox_inches='tight')
+    #plt.show()
+    fig.savefig("Int"+str(i)+".pdf", bbox_inches='tight')
     i+=1
     
     
@@ -864,10 +864,10 @@ while(i < niter):
     plt.xlim(0,1)
     plt.ylim(0,1)
 
-    plt.show()
+    #plt.show()
     
     
-    # fig.savefig("Scatter"+str(i)+".pdf", bbox_inches='tight')
+    fig.savefig("Scatter"+str(i)+".pdf", bbox_inches='tight')
     i+=1
 
 # ###
