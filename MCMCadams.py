@@ -592,6 +592,12 @@ def intensitySampler(mu,sigma2,ntot):
 
 # intensitySampler(mu,sigma2,500)
 
+
+
+
+
+
+
 ###
 # full sampler of thinned locations, thinned values, observed values and intensity
 ###
@@ -681,7 +687,7 @@ pointpo.plot()
 
 newGP = GP(zeroMean,gaussianCov(2,0.5))
 
-niter=100
+niter=10
 
 import time
 
