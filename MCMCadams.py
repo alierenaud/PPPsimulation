@@ -610,16 +610,19 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
     obsVal = np.empty(shape=size,dtype=np.ndarray)
     lams = np.empty(shape=size)
     
+    Sigmas = np.empty(shape=(size),dtype=np.ndarray)
+    Sigmas_inv = np.empty(shape=(size),dtype=np.ndarray)
+    
     # initialization
     
     thinLoc[0] = PPP.randomHomog(lam=lam_init).loc
     nthin = thinLoc[0].shape[0]
     locTot = np.concatenate((thinLoc[0],thisPPP.loc))
-    Sigma = thisGP.covMatrix(locTot)
-    Sigma_inv = np.linalg.inv(Sigma)
+    Sigmas[0] = thisGP.covMatrix(locTot)
+    Sigmas_inv[0] = np.linalg.inv(Sigmas[0])
     nloc = locTot.shape[0]
     
-    totVal = rMultNorm(nloc,0,Sigma)
+    totVal = rMultNorm(nloc,0,Sigmas[0])
     
     thinVal[0] = totVal[0:nthin]
     obsVal[0] = totVal[nthin:nloc]
@@ -627,14 +630,14 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
     
     i=1
     while i < size:
-        locThin_prime, valThin_prime, Sigma, Sigma_inv = birthDeathMove(lams[i-1],kappa,thisGP,
+        locThin_prime, valThin_prime, Sigmas[i], Sigmas_inv[i] = birthDeathMove(lams[i-1],kappa,thisGP,
                                                     thinLoc[i-1],thinVal[i-1],
-                                                    thisPPP.loc,obsVal[i-1],Sigma, Sigma_inv)
+                                                    thisPPP.loc,obsVal[i-1],Sigmas[i-1], Sigmas_inv[i-1])
         j=1
         while j < nInsDelMov:
-            locThin_prime, valThin_prime, Sigma, Sigma_inv = birthDeathMove(lams[i-1],kappa,thisGP,
+            locThin_prime, valThin_prime, Sigmas[i], Sigmas_inv[i]= birthDeathMove(lams[i-1],kappa,thisGP,
                                                     locThin_prime, valThin_prime,
-                                                    thisPPP.loc,obsVal[i-1],Sigma, Sigma_inv)
+                                                    thisPPP.loc,obsVal[i-1],Sigmas[i], Sigmas_inv[i])
             j+=1
         
 
@@ -645,7 +648,7 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
         nthin = locThin_prime.shape[0]
         
         # Sigma = thisGP.covMatrix(locTot_prime)
-        A = np.linalg.cholesky(Sigma)
+        A = np.linalg.cholesky(Sigmas[i])
         ntot = A.shape[0]
         
         whiteVal_prime = sp.linalg.solve_triangular(A,np.identity(ntot),lower=True)@valTot_prime
@@ -672,14 +675,14 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
 
 
 
-def fct(x):
-     return(np.exp((-x[:,0]**2-x[:,1]**2)/0.3)*0.8+0.10)
 # def fct(x):
-#     return(np.exp(-(0.25-np.sqrt((x[:,0]-0.5)**2+(x[:,1]-0.5)**2))**2/0.003)*0.8+0.10)
+#      return(np.exp((-x[:,0]**2-x[:,1]**2)/0.3)*0.8+0.10)
+def fct(x):
+    return(np.exp(-(0.25-np.sqrt((x[:,0]-0.5)**2+(x[:,1]-0.5)**2))**2/0.003)*0.8+0.10)
 # def fct(x):
 #     return(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.007)*0.8+0.10)
 
-lam_sim=1000
+lam_sim=800
 
 pointpo = PPP.randomNonHomog(lam_sim,fct)
 pointpo.plot()
@@ -687,12 +690,12 @@ pointpo.plot()
 
 newGP = GP(zeroMean,gaussianCov(2,0.5))
 
-niter=10
+niter=300
 
 import time
 
 t0 = time.time()
-thinLoc,thinVal,obsVal,lams = MCMCadams(niter,1150,newGP,pointpo,100,10,0.1,10,1300,1000)
+thinLoc,thinVal,obsVal,lams = MCMCadams(niter,900,newGP,pointpo,80,10,0.1,10,1000,1000)
 t1 = time.time()
 
 total1 = t1-t0
