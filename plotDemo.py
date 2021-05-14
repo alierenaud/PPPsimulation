@@ -137,9 +137,9 @@ fig.savefig("foo3.pdf", bbox_inches='tight')
 ### SGCD with thinned and GP at grid locations
 
 
-lam=50
-tau=1
-rho=1
+lam=400
+tau=4
+rho=4
 
 def expit(x):
     return(np.exp(x)/(1+np.exp(x)))
@@ -164,7 +164,7 @@ def makeGrid(xlim,ylim,res):
     return(grid)
 
 
-res = 100
+res = 50
 gridLoc = makeGrid([0,1], [0,1], res)
 
 

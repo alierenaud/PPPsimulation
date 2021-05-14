@@ -869,6 +869,113 @@ while(i < niter):
     
     fig.savefig("Scatter"+str(i)+".pdf", bbox_inches='tight')
     i+=1
+    
+    
+### Example with SGCP simulated data
+
+lam=400
+tau=4
+rho=4
+
+res = 50
+gridLoc = makeGrid([0,1], [0,1], res)
+
+
+locs = PPP.randomHomog(lam).loc
+
+newGP = GP(zeroMean,gaussianCov(tau,rho))
+GPvals = newGP.rGP(np.concatenate((locs,gridLoc)))
+
+
+gridInt = lam*expit(GPvals[locs.shape[0]:,:])
+
+
+locProb  = expit(GPvals[:locs.shape[0],:])
+index = np.array(np.greater(locProb,random.uniform(size=locProb.shape)))
+locObs = locs[np.squeeze(index)]
+locThin = locs[np.logical_not(np.squeeze(index))]
+
+pointpo = PPP.randomHomog(lam)
+pointpo.loc = locObs
+
+niter=1000
+
+import time
+
+t0 = time.time()
+thinLoc,thinVal,obsVal,lams = MCMCadams(niter,lam,newGP,pointpo,50,10,0.1,10,lam,100)
+t1 = time.time()
+
+total1 = t1-t0
+
+
+### Inference at grid locations
+
+resGP = np.empty(shape=niter,dtype=np.ndarray)
+i=0
+t0 = time.time()
+while(i < niter):
+    resGP[i] = lams[i]*expit(newGP.rCondGP(gridLoc,np.concatenate((thinLoc[i],pointpo.loc)),
+              np.concatenate((thinVal[i],obsVal[i]))))
+    print(i)
+    i+=1
+t1 = time.time()
+
+total2 = t1-t0
+
+meanGP = np.mean(resGP)
+
+
+#### to make plot ####
+
+imGP = np.transpose(meanGP.reshape(res,res))
+
+x = np.linspace(0,1, res+1) 
+y = np.linspace(0,1, res+1) 
+X, Y = np.meshgrid(x,y) 
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
+
+plt.pcolormesh(X,Y,imGP, cmap='cool')
+
+plt.xlim(0,1)
+plt.ylim(0,1)
+plt.colorbar()
+
+plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
+
+plt.show()
+
+
+### plot of actual intensity
+
+
+### int + obs + thin
+
+imGP = np.transpose(gridInt.reshape(res,res))
+
+x = np.linspace(0,1, res+1) 
+y = np.linspace(0,1, res+1) 
+X, Y = np.meshgrid(x,y) 
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
+
+plt.pcolormesh(X,Y,imGP, cmap='winter')
+
+plt.xlim(0,1)
+plt.ylim(0,1)
+plt.colorbar()
+
+plt.scatter(locObs[:,0],locObs[:,1], color= "black", s=1)
+plt.scatter(locThin[:,0],locThin[:,1], color= "white", s=1)
+
+
+plt.show()
+    
 
 # ###
 # # full sampler of thinned locations, thinned values, observed values and intensity
