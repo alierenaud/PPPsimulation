@@ -8,10 +8,16 @@ Created on Sun Nov 15 12:42:08 2020
 import numpy as np
 from numpy import random
 import matplotlib.pyplot as plt
+
+from rGP import GP
+from rGP import gaussianCov
+from rGP import zeroMean
     
 def isInUnitSquare(x):
     return(x[0]>0 and x[0]<1 and x[1]>0 and x[1]<1)
 
+def expit(x):
+    return(np.exp(x)/(1+np.exp(x)))
 
 class PPP:  
     def __init__(self, loc):
@@ -28,6 +34,16 @@ class PPP:
         newPPP = cls.randomHomog(lam)
         index = np.greater(fct(newPPP.loc),random.uniform(size=newPPP.loc.shape[0]))
         newPPP.loc = newPPP.loc[index]
+        return(newPPP)
+    
+    
+    @classmethod
+    def randomSGCD(cls,lam,tau,rho):
+        newPPP = cls.randomHomog(lam)
+        newGP = GP(zeroMean,gaussianCov(1,1))
+        marks = newGP.rGP(newPPP.loc)
+        index = np.array(np.greater(expit(marks),random.uniform(size=marks.shape)))
+        newPPP.loc = newPPP.loc[np.squeeze(index)]
         return(newPPP)
     
 

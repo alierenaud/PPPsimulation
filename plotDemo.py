@@ -11,6 +11,10 @@ import numpy as np
 from numpy import random
 import matplotlib.pyplot as plt
 
+from rGP import GP
+from rGP import gaussianCov
+from rGP import zeroMean
+
 ### usage example
 
 lam=500
@@ -130,10 +134,94 @@ fig.savefig("foo3.pdf", bbox_inches='tight')
 
 
 
+### SGCD with thinned and GP at grid locations
+
+
+lam=50
+tau=1
+rho=1
+
+def expit(x):
+    return(np.exp(x)/(1+np.exp(x)))
+
+def makeGrid(xlim,ylim,res):
+    grid = np.ndarray((res**2,2))
+    xlo = xlim[0]
+    xhi = xlim[1]
+    xrange = xhi - xlo
+    ylo = ylim[0]
+    yhi = ylim[1]
+    yrange = yhi - ylo
+    xs = np.arange(xlo, xhi, step=xrange/res) + xrange/res*0.5
+    ys = np.arange(ylo, yhi, step=yrange/res) + yrange/res*0.5
+    i=0
+    for x in xs:
+        j=0
+        for y in ys:
+            grid[i*res+j,:] = [x,y]
+            j+=1
+        i+=1
+    return(grid)
+
+
+res = 100
+gridLoc = makeGrid([0,1], [0,1], res)
+
+
+locs = PPP.randomHomog(lam).loc
+
+newGP = GP(zeroMean,gaussianCov(tau,rho))
+GPvals = newGP.rGP(np.concatenate((locs,gridLoc)))
+
+
+gridInt = lam*expit(GPvals[locs.shape[0]:,:])
+
+
+locProb  = expit(GPvals[:locs.shape[0],:])
+index = np.array(np.greater(locProb,random.uniform(size=locProb.shape)))
+locObs = locs[np.squeeze(index)]
+locThin = locs[np.logical_not(np.squeeze(index))]
 
 
 
 
+### cox process
+
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
+
+plt.xlim(0,1)
+plt.ylim(0,1)
+
+plt.scatter(locObs[:,0],locObs[:,1])
+
+plt.show()
+
+### int + obs + thin
+
+imGP = np.transpose(gridInt.reshape(res,res))
+
+x = np.linspace(0,1, res+1) 
+y = np.linspace(0,1, res+1) 
+X, Y = np.meshgrid(x,y) 
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
+
+plt.pcolormesh(X,Y,imGP, cmap='winter')
+
+plt.xlim(0,1)
+plt.ylim(0,1)
+plt.colorbar()
+
+plt.scatter(locObs[:,0],locObs[:,1], color= "black", s=1)
+plt.scatter(locThin[:,0],locThin[:,1], color= "white", s=1)
+
+
+plt.show()
 
 
 

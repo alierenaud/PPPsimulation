@@ -53,4 +53,18 @@ pointpo.plot()
 
 
 
+lam=350
+tau=1
+rho=100
+
+pointpo = PPP.randomSGCD(lam,tau,rho)
+pointpo.plot()
+
+
+
+
+
+
+
+
 
