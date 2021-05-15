@@ -874,8 +874,8 @@ while(i < niter):
 ### Example with SGCP simulated data
 
 lam=400
-tau=4
-rho=4
+tau=1
+rho=1
 
 res = 50
 gridLoc = makeGrid([0,1], [0,1], res)
@@ -938,7 +938,7 @@ fig = plt.figure()
 ax = fig.add_subplot(111)
 ax.set_aspect('equal')
 
-plt.pcolormesh(X,Y,imGP, cmap='cool')
+plt.pcolormesh(X,Y,imGP, cmap='winter')
 
 plt.xlim(0,1)
 plt.ylim(0,1)
