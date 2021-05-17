@@ -224,6 +224,92 @@ plt.scatter(locThin[:,0],locThin[:,1], color= "white", s=1)
 plt.show()
 
 
+#### multitype SGCP
+
+from scipy.stats import matrix_normal
+# from scipy.stats import multinomial
+
+lam=200
+tau=1
+rho=0.1
+
+locs = PPP.randomHomog(lam).loc
+
+
+newGP = GP(zeroMean,gaussianCov(tau,rho))
+
+U = newGP.covMatrix(locs)
+
+n=50
+eps=1/n
+X = np.array([[0,eps/np.sqrt(1+eps**2),1/np.sqrt(1+eps**2)],[0,-eps/np.sqrt(1+eps**2),1/np.sqrt(1+eps**2)],[1/np.sqrt(2),0,-1/np.sqrt(2)]])
+V = X@np.transpose(X)
+
+
+
+# V = np.array([[1,0.9999],[0.9999,1]]) 
+
+
+
+X = matrix_normal.rvs(rowcov=U, colcov=V)
+
+def multExpit(x):
+    N = np.sum(np.exp(x))
+    probs = np.array([np.exp(i)/(1+N) for i in x])
+    return(np.append(probs,1-np.sum(probs)))
+        
+        
+probs = np.array([multExpit(x) for x in X])
+
+nch = probs.shape[1]
+
+colours = np.array([np.random.choice(nch,p=p) for p in probs])
+
+locs0 = locs[colours == 0]
+locs1 = locs[colours == 1]
+locs2 = locs[colours == 2]
+locs3 = locs[colours == 3]
+
+
+### plot of real for multivariate SGCP
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
+
+
+plt.xlim(0,1)
+plt.ylim(0,1)
+
+plt.scatter(locs0[:,0],locs0[:,1],label="Oak")
+plt.scatter(locs1[:,0],locs1[:,1],label="Pine")
+plt.scatter(locs2[:,0],locs2[:,1],label="Maple")
+# plt.scatter(locs3[:,0],locs3[:,1], c="grey")
+plt.legend(bbox_to_anchor=(1, 0.8))
+
+plt.show()
+
+
+### plot of real for multivariate SGCP
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
+
+
+plt.xlim(0,1)
+plt.ylim(0,1)
+
+plt.scatter(locs0[:,0],locs0[:,1],label="Oak")
+plt.scatter(locs1[:,0],locs1[:,1],label="Pine")
+plt.scatter(locs2[:,0],locs2[:,1],label="Maple")
+plt.scatter(locs3[:,0],locs3[:,1], c="grey",label="Thinned")
+
+
+plt.legend(bbox_to_anchor=(1, 0.8))
+
+plt.show()
+
 
 
         
