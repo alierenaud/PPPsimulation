@@ -9,6 +9,59 @@ Created on Tue May 25 11:37:17 2021
 import numpy as np
 
 
+class dsymatrix:
+    
+    def __init__(self, size, arr):
+        self.matrix = np.ndarray((size,size))
+        self.ind = list(range(0,arr.shape[0]))
+        self.indCem = list(range(arr.shape[0],size))
+        self.matrix[np.ix_(self.ind,self.ind)] = arr
+        
+    def sliceMatrix(self):
+        return self.matrix[np.ix_(self.ind,self.ind)]
+    
+    def size(self):
+        return(len(self.ind))
+    
+    def delete(self, nb):
+        self.indCem.insert(0,self.ind.pop(nb))
+    
+    def concat(self,A):
+        newInd = self.indCem.pop(0)
+        self.ind.append(newInd)
+        self.matrix[np.ix_([newInd],self.ind)] = A
+        self.matrix[np.ix_(self.ind,[newInd])] = np.transpose(A)       
+    
+    def __repr__(self):
+        return(self.sliceMatrix().__repr__())
+    
+    def __matmul__(self,other):
+        return(self.sliceMatrix()@other)
+    
+sigma = dsymatrix(100,np.array([[1,2,3],[4,5,6],[7,8,9]]))
+
+
+sigma
+sigma.ind
+sigma.indCem
+
+sigma.sliceMatrix()
+
+sigma.delete(0)
+
+
+sigma
+sigma.ind
+sigma.indCem
+
+sigma.concat(np.array([[1,0,1]]))
+
+sigma
+
+sigma.size()
+
+sigma@np.array([[1],[1],[1]])    
+    
 
 
 
