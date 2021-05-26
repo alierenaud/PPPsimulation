@@ -96,13 +96,13 @@ N = 10000
 
 from numpy import random
 
-initSize = 2000
+initSize = 1000
 random.seed(0)
 
 arr = random.normal(size=(initSize, initSize))
 
 
-dynArr = dmatrix(3000,3000, arr)
+dynArr = dmatrix(5000,5000, arr)
 
 
 i=0
