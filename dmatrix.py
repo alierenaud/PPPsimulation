@@ -210,7 +210,93 @@ print(total1)
 print(total2)
 
 
+### data structure for thinned locations
 
+
+class bdmatrix:
+    
+    
+    def __init__(self, nrow, arr, size):
+        ncol = arr.shape[1]
+        self.length = arr.shape[0]
+        self.matrix = np.ndarray((nrow,ncol))
+        self.indTable = np.empty(shape=10,dtype=list)
+        self.indTable[0] = list(range(0,self.length))
+        self.matrix[np.ix_(self.indTable[0],list(range(0,ncol)))] = arr
+        self.sampNb=0
+        
+        
+    def nextSamp(self):
+        self.indTable[self.sampNb+1] = self.indTable[self.sampNb].copy()
+        self.sampNb +=1
+        
+    def birth(self,loc):
+        self.indTable[self.sampNb].append(self.length)
+        self.matrix[self.length]=loc
+        self.length +=1
+        
+    def death(self,i):
+        self.indTable[self.sampNb].pop(i)
+        
+    def move(self,i,loc):
+        self.indTable[self.sampNb][i] = self.length
+        self.matrix[self.length]=loc
+        self.length +=1
+        
+        
+        
+    def __getitem__(self, items):
+        if isinstance(items, int):
+            return([self.matrix[i,:] for i in [self.indTable[items]]])
+        else:
+            return([self.matrix[i,:] for i in self.indTable[items]])
+            
+        
+        
+
+### init
+
+arr= np.array([[1,2],[3,4],[5,6]])        
+        
+newBDM = bdmatrix(10,arr,5)        
+        
+newBDM.indTable        
+newBDM.matrix         
+        
+
+
+### nextSamp
+
+newBDM.nextSamp()
+newBDM.indTable 
+
+## birth
+
+newBDM.birth([7,8])
+
+## death
+
+newBDM.death(1)
+
+newBDM.nextSamp()
+newBDM.death(2)
+newBDM.birth([9,10])
+
+## move
+
+newBDM.move(0, [11,12])
+
+
+### getitem      
+        
+newBDM[0]        
+newBDM[[0,1]]        
+newBDM[[0,1,2]]        
+        
+newBDM.indTable        
+newBDM.matrix         
+        
+        
 
 
 
