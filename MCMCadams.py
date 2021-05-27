@@ -16,8 +16,8 @@ from rppp import PPP
 from scipy.stats import gamma
 import matplotlib.pyplot as plt
 import scipy as sp
-
-
+from dmatrix import bdmatrix
+from dmatrix import dsymatrix
 
 # Source: (Adams, 2009) Tractable Nonparametric Bayesian Inference in Poisson Processes
 # with Gaussian Process Intensities
@@ -296,7 +296,7 @@ def kernelBeta(xNew,xOld,kappa):
 
 def locationMove(kappa, thisGP, locThin, valThin, locObs, valObs, Sigma, Sigma_inv):
 
-    nlocThin = locThin.shape[0]
+    nlocThin = locThin.ind
     
     moveInd = random.choice(np.array(range(0,nlocThin)))
     
@@ -605,39 +605,37 @@ def intensitySampler(mu,sigma2,ntot):
 
 def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
     
-    thinLoc = np.empty(shape=size,dtype=np.ndarray)
-    thinVal = np.empty(shape=size,dtype=np.ndarray)
-    obsVal = np.empty(shape=size,dtype=np.ndarray)
-    lams = np.empty(shape=size)
     
-    Sigmas = np.empty(shape=(size),dtype=np.ndarray)
-    Sigmas_inv = np.empty(shape=(size),dtype=np.ndarray)
+    ### parameters containers
+    thinLoc = bdmatrix(2*lam_init + size*nInsDelMov, PPP.randomHomog(lam=lam_init).loc,size)
+    thinVal = []
+    obsVal = np.empty(shape=(size,thisPPP.loc.shape[0]))
+    lams = np.empty(shape=(size))
     
-    # initialization
     
-    thinLoc[0] = PPP.randomHomog(lam=lam_init).loc
-    nthin = thinLoc[0].shape[0]
+    ### cov and inv containers
     locTot = np.concatenate((thinLoc[0],thisPPP.loc))
-    Sigmas[0] = thisGP.covMatrix(locTot)
-    Sigmas_inv[0] = np.linalg.inv(Sigmas[0])
-    nloc = locTot.shape[0]
     
-    totVal = rMultNorm(nloc,0,Sigmas[0])
+    Sigma = dsymatrix(5*lam_init,thisGP.covMatrix(locTot))
+    Sigma_inv = np.linalg.inv(Sigma)
     
-    thinVal[0] = totVal[0:nthin]
-    obsVal[0] = totVal[nthin:nloc]
+    ### initialization of GP values
+    nthin = thinLoc[0].shape[0]
+    totVal = rMultNorm(0,Sigma.sliceMatrix())
+    
+    thinVal[0] = totVal[:nthin]
+    obsVal[0] = totVal[nthin:]
+    
+    ### initialization of lambda
     lams[0] = lam_init
     
     i=1
     while i < size:
-        locThin_prime, valThin_prime, Sigmas[i], Sigmas_inv[i] = birthDeathMove(lams[i-1],kappa,thisGP,
-                                                    thinLoc[i-1],thinVal[i-1],
-                                                    thisPPP.loc,obsVal[i-1],Sigmas[i-1], Sigmas_inv[i-1])
-        j=1
+        
+        j=0
         while j < nInsDelMov:
-            locThin_prime, valThin_prime, Sigmas[i], Sigmas_inv[i]= birthDeathMove(lams[i-1],kappa,thisGP,
-                                                    locThin_prime, valThin_prime,
-                                                    thisPPP.loc,obsVal[i-1],Sigmas[i], Sigmas_inv[i])
+            birthDeathMove(lams[i-1],kappa,thisGP,thinLoc, thinVal,
+                           thisPPP.loc,obsVal[i-1],Sigma, Sigma_inv)
             j+=1
         
 
