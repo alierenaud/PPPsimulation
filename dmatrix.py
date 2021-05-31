@@ -140,7 +140,7 @@ sigma.concat(np.array([[1],[0]]),1)
 
 sigma
 
-sigma.size()
+sigma.size
 
 sigma.change([[1],[1],[1]], 2)
 
@@ -345,6 +345,9 @@ class bdmatrix:
         self.matrix[self.length]=loc
         self.length +=1
         
+    def getThinLoc(self,ind):
+        return self.matrix[self.indTable[self.sampNb][self.nObs+ind],:]
+        
     def obsLoc(self):
         return self.matrix[self.indTable[self.sampNb][:self.nObs],:]
     
@@ -415,6 +418,9 @@ newBDM.indTable
 newBDM.obsLoc() 
 newBDM.thinLoc()
 newBDM.nThin
+newBDM.getThinLoc(0)
+newBDM.getThinLoc(1)
+newBDM.getThinLoc(2)
 newBDM.totLoc()   
 
 

@@ -249,10 +249,10 @@ def jitterBeta(x,kappa):
 ###
 
 def kernelBeta(xNew,xOld,kappa):
-    phi0 = kappa/min(xOld[:,0],1-xOld[:,0])
-    phi1 = kappa/min(xOld[:,1],1-xOld[:,1])
-    d0 = beta.pdf(xNew[:,0], xOld[:,0]*phi0, (1-xOld[:,0])*phi0)
-    d1 = beta.pdf(xNew[:,1], xOld[:,1]*phi1, (1-xOld[:,1])*phi1)
+    phi0 = kappa/min(xOld[0],1-xOld[0])
+    phi1 = kappa/min(xOld[1],1-xOld[1])
+    d0 = beta.pdf(xNew[0], xOld[0]*phi0, (1-xOld[0])*phi0)
+    d1 = beta.pdf(xNew[1], xOld[1]*phi1, (1-xOld[1])*phi1)
     return(d0*d1)
 
 # ### TESTER: kernelBeta
@@ -294,32 +294,42 @@ def kernelBeta(xNew,xOld,kappa):
 # Jitters one of the point process location and resamples the GP at said location
 ###
 
-def locationMove(kappa, thisGP, locThin, valThin, locObs, valObs, Sigma, Sigma_inv):
+def locationMove(kappa, thisGP, locations, values, Sigma):
 
-    nlocThin = locThin.ind
     
-    moveInd = random.choice(np.array(range(0,nlocThin)))
+    moveInd = random.choice(np.array(range(0,locations.nThin))) ## choose random point to move
     
-    moveLoc = np.array([locThin[moveInd]])
-    newLoc = np.array([[jitterBeta(moveLoc[:,0],kappa),jitterBeta(moveLoc[:,1],kappa)]])
+    ## propose new point
+    moveLoc = locations.getThinLoc(moveInd)
+    newLoc = np.array([jitterBeta(moveLoc[0],kappa),jitterBeta(moveLoc[1],kappa)])
 
-    locTot = np.concatenate((locThin, locObs))
-    valTot = np.concatenate((valThin, valObs))
-    newVal, newSigma, newSigma_inv = thisGP.rCondGP1DSigma(newLoc, locTot, valTot, Sigma, Sigma_inv)
+
+    ## propose new value from GP(.|totVal)
     
-    acc_loc = kernelBeta(moveLoc, newLoc, kappa)/(1+np.exp(newVal))*(1+np.exp(valThin[moveInd]))/kernelBeta(newLoc, moveLoc, kappa) 
+    s_11 = thisGP.cov([newLoc],[newLoc])
+    S_21 = thisGP.cov(locations.totLoc(),[newLoc])
+    
+    S_12S_22m1 = np.transpose(S_21)@Sigma.inver
+    
+    mu = S_12S_22m1@values.totLoc()
+    sig = s_11 - S_12S_22m1@S_21
+    
+    newVal = np.sqrt(sig)*np.random.normal()+mu
+    
+    
+    acc_loc = kernelBeta(moveLoc, newLoc, kappa)/(1+np.exp(newVal))*(1+np.exp(values.getThinLoc(moveInd)))/kernelBeta(newLoc, moveLoc, kappa) 
         
     U = random.uniform(size=1)
         
     if U < acc_loc:
-        locThin = np.delete(locThin, moveInd, 0)
-        valThin = np.delete(valThin, moveInd, 0)
-        locThin = np.concatenate((newLoc, locThin))
-        valThin = np.concatenate((newVal, valThin))
-        Sigma = np.delete(np.delete(newSigma, moveInd+1, 0), moveInd+1, 1)
-        Sigma_inv = woodDelInv(newSigma, newSigma_inv, moveInd+1)
+        
+        locations.move(moveInd,newLoc)
+        values.move(moveInd,newVal)
+        
+        S_21[locations.nObs+moveInd,:] = s_11
+        
+        Sigma.change(S_21,moveInd)
 
-    return(locThin, valThin, Sigma, Sigma_inv)
 
 # ### TESTER locationMove
 # kappa=10
@@ -347,18 +357,17 @@ def locationMove(kappa, thisGP, locThin, valThin, locObs, valObs, Sigma, Sigma_i
 # Combines a mixture of birth-death-move type of samplers
 ###
 
-def birthDeathMove(lam, kappa, thisGP, locThin, valThin, locObs, valObs, Sigma, Sigma_inv):
+def birthDeathMove(lam, kappa, thisGP, locations, values, Sigma):
     
-    nthin = locThin.shape[0]
     
-    A = random.binomial(1,alpha(nthin),1)
+    A = random.binomial(1,alpha(locations.nthin),1)
     
     if A:
-        locThin, valThin, Sigma, Sigma_inv = nthinSampler(lam, thisGP, locThin, valThin, locObs, valObs, Sigma, Sigma_inv)
+        nthinSampler(lam, thisGP, locations, values, Sigma)
     else:
-        locThin, valThin, Sigma, Sigma_inv = locationMove(kappa, thisGP, locThin, valThin, locObs, valObs, Sigma, Sigma_inv)
+        locationMove(kappa, thisGP, locations, values, Sigma)
     
-    return(locThin, valThin, Sigma, Sigma_inv)
+
 
 # ### TESTER birthDeathMove
 
@@ -606,27 +615,27 @@ def intensitySampler(mu,sigma2,ntot):
 def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
     
     
+    
+    ### location container initialization
+    totLocInit = np.concatenate((thisPPP.loc,PPP.randomHomog(lam=lam_init).loc),0)
+    nObs = thisPPP.loc.shape[0]
+    
+    locations = bdmatrix(5*lam_init + size*nInsDelMov,totLocInit,nObs,size) # initial size is a bit of black magic
+    
+    ### cov matrix initialization
+    
+    Sigma = dsymatrix(5*lam_init,thisGP.covMatrix(totLocInit))
+    
+    ### GP values container initialization
+    
+    values = bdmatrix(4*lam_init*size,rMultNorm(0,Sigma.sliceMatrix()),nObs,size)
+    
+    
     ### parameters containers
-    thinLoc = bdmatrix(2*lam_init + size*nInsDelMov, PPP.randomHomog(lam=lam_init).loc,size)
-    thinVal = []
-    obsVal = np.empty(shape=(size,thisPPP.loc.shape[0]))
     lams = np.empty(shape=(size))
     
     
-    ### cov and inv containers
-    locTot = np.concatenate((thinLoc[0],thisPPP.loc))
-    
-    Sigma = dsymatrix(5*lam_init,thisGP.covMatrix(locTot))
-    Sigma_inv = np.linalg.inv(Sigma)
-    
-    ### initialization of GP values
-    nthin = thinLoc[0].shape[0]
-    totVal = rMultNorm(0,Sigma.sliceMatrix())
-    
-    thinVal[0] = totVal[:nthin]
-    obsVal[0] = totVal[nthin:]
-    
-    ### initialization of lambda
+### initialization of lambda
     lams[0] = lam_init
     
     i=1
@@ -634,8 +643,7 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
         
         j=0
         while j < nInsDelMov:
-            birthDeathMove(lams[i-1],kappa,thisGP,thinLoc, thinVal,
-                           thisPPP.loc,obsVal[i-1],Sigma, Sigma_inv)
+            birthDeathMove(lams[i-1],kappa,thisGP,locations,values,Sigma)
             j+=1
         
 

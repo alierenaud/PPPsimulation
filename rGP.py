@@ -120,6 +120,8 @@ class GP:
     
 def gaussianCov(sigma2,l):
     def evalCov(x,y):
+
+        
         return(sigma2*np.exp(-distance_matrix(x,y)/l))
     return(evalCov)
 
