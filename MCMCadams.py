@@ -398,7 +398,7 @@ def locationMove(kappa, thisGP, locations, values, Sigma):
 def birthDeathMove(lam, kappa, thisGP, locations, values, Sigma):
     
     
-    A = random.binomial(1,alpha(locations.nthin),1)
+    A = random.binomial(1,alpha(locations.nThin),1)
     
     if A:
         nthinSampler(lam, thisGP, locations, values, Sigma)
@@ -491,11 +491,11 @@ def expit(x):
 # potential energy in whitened space (AA^T=Sigma) Thinned events are first in Sigma
 ###
 
-def U(whiteVal, A, nthin):
+def U(whiteVal, A, nObs):
     
-    return(np.sum(np.log(1+np.exp(-A[nthin:,:]@whiteVal))) + 
-           np.sum(np.log(1+np.exp(A[:nthin,:]@whiteVal))) +
-           1/2*np.transpose(whiteVal)@whiteVal)
+    return(np.sum(np.log(1+np.exp(-A[:nObs,:]@whiteVal))) + 
+           np.sum(np.log(1+np.exp(A[nObs:,:]@whiteVal))) +
+           1/2*np.sum(whiteVal**2))
     
 # ### TESTER: U
 # newGP = GP(zeroMean,gaussianCov(1,1))
@@ -518,10 +518,10 @@ def U(whiteVal, A, nthin):
 # derivative of potential energy in whitened space (AA^T=Sigma) Thinned events are first in Sigma
 ###
 
-def U_prime(whiteVal, A, nthin):
+def U_prime(whiteVal, A, nObs):
 
-    return(-np.transpose(np.transpose(expit(-A[nthin:,:]@whiteVal))@A[nthin:,:]) +
-           np.transpose(np.transpose(expit(A[:nthin,:]@whiteVal))@A[:nthin,:]) +
+    return(-np.transpose(np.transpose(expit(-A[:nObs,:]@whiteVal))@A[:nObs,:]) +
+           np.transpose(np.transpose(expit(A[nObs:,:]@whiteVal))@A[nObs:,:]) +
            whiteVal)
 
 # ### TESTER: U_prime
@@ -545,34 +545,38 @@ def U_prime(whiteVal, A, nthin):
 # sampling the GP values at the thinned and observed events
 ###
 
-def functionSampler(delta,L,whiteVal,A,nthin):
+def functionSampler(delta,L,values,Sigma):
     
-    ntot = whiteVal.shape[0]
+    A = np.linalg.cholesky(Sigma.sliceMatrix())
     
-    v_init = random.normal(size=(ntot,1))
+    nObs = values.nObs
+    ntot = values.nThin + nObs
+    whiteVal = sp.linalg.solve_triangular(A,np.identity(ntot),lower=True)@values.totLoc()
     
-    v_prime = v_init - delta/2*U_prime(whiteVal, A, nthin)
-    x_prime = whiteVal + delta*v_prime
+    kinVal = random.normal(size=(ntot,1))
+    
+    kinVal_prime = kinVal - delta/2*U_prime(whiteVal, A, nObs)
+    whiteVal_prime = whiteVal + delta*kinVal_prime
     
     l=0
     while(l<L):
-        v_prime = v_prime - delta*U_prime(x_prime,A,nthin)
-        x_prime = x_prime + delta*v_prime
+        kinVal_prime = kinVal_prime - delta*U_prime(whiteVal_prime,A,nObs)
+        whiteVal_prime = whiteVal_prime + delta*kinVal_prime
         
         l += 1
         
-    v_prime = v_prime - delta/2*U_prime(x_prime,A,nthin)
+    kinVal_prime = kinVal_prime - delta/2*U_prime(whiteVal_prime,A,nObs)
     
-    a_func = np.exp(-U(x_prime,A,nthin)+U(whiteVal,A,nthin)
-                    - 1/2*np.transpose(v_prime)@v_prime
-                    + 1/2*np.transpose(v_init)@v_init)
+    a_func = np.exp(-U(whiteVal_prime,A,nObs)+U(whiteVal,A,nObs)
+                    - 1/2*np.sum(kinVal_prime**2)
+                    + 1/2*np.sum(kinVal**2))
     
     Uf = random.uniform(size=1)
         
     if Uf < a_func:
-        whiteVal = x_prime
+        values.newVals(A@whiteVal_prime)
     
-    return(whiteVal)
+
 
 
 # ### TESTER: functionSampler
@@ -662,7 +666,7 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
     
     ### cov matrix initialization
     
-    Sigma = dsymatrix(5*lam_init,thisGP.covMatrix(totLocInit))
+    Sigma = dsymatrix(5*lam_init,thisGP.covMatrix(totLocInit),nObs)
     
     ### GP values container initialization
     
@@ -686,34 +690,42 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
         
 
         
-        # locTot_prime = np.concatenate((locThin_prime,thisPPP.loc))
-        valTot_prime = np.concatenate((valThin_prime,obsVal[i-1]))
+        # # locTot_prime = np.concatenate((locThin_prime,thisPPP.loc))
+        # valTot_prime = np.concatenate((valThin_prime,obsVal[i-1]))
         
-        nthin = locThin_prime.shape[0]
+        # nthin = locThin_prime.shape[0]
         
-        # Sigma = thisGP.covMatrix(locTot_prime)
-        A = np.linalg.cholesky(Sigmas[i])
-        ntot = A.shape[0]
+        # # Sigma = thisGP.covMatrix(locTot_prime)
+        # A = np.linalg.cholesky(Sigmas[i])
+        # ntot = A.shape[0]
         
-        whiteVal_prime = sp.linalg.solve_triangular(A,np.identity(ntot),lower=True)@valTot_prime
+        # whiteVal_prime = sp.linalg.solve_triangular(A,np.identity(ntot),lower=True)@valTot_prime
         
-        whiteVal_prime = functionSampler(delta,L,whiteVal_prime,A,nthin)
+        functionSampler(delta,L,values,Sigma)
         
-        valTot_prime = A @ whiteVal_prime
         
-        thinLoc[i] = locThin_prime
-        thinVal[i] = valTot_prime[:nthin,:]
-        obsVal[i] = valTot_prime[nthin:,:]
+        
+        
+        
+        
+        # valTot_prime = A @ whiteVal_prime
+        
+        # thinLoc[i] = locThin_prime
+        # thinVal[i] = valTot_prime[:nthin,:]
+        # obsVal[i] = valTot_prime[nthin:,:]
         
         # ntot = valTot_prime.shape[0]
         
-        lams[i] = intensitySampler(mu,sigma2,ntot)
+        lams[i] = intensitySampler(mu,sigma2,values.nThin + values.nObs)
+        
+        
+        ### next sample
         
         print(i)
         i+=1
     
     
-    return(thinLoc,thinVal,obsVal,lams)
+    return(locations, values, lams)
 
 # ### TESTER: MCMCadams
 

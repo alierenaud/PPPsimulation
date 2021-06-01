@@ -11,13 +11,14 @@ import numpy as np
 
 class dsymatrix:
     
-    def __init__(self, size, arr):
+    def __init__(self, size, arr, nObs):
         self.matrix = np.ndarray((size,size))
         self.ind = list(range(0,arr.shape[0]))
         self.indCem = list(range(arr.shape[0],size))
         self.matrix[np.ix_(self.ind,self.ind)] = arr
         self.inver = np.linalg.inv(arr)
         self.size = len(self.ind)
+        self.nObs = nObs
         
     def sliceMatrix(self):
         return self.matrix[np.ix_(self.ind,self.ind)]
@@ -27,7 +28,7 @@ class dsymatrix:
     
     def delete(self, nb):
         
-        
+        nb += self.nObs
         
         ### updating inverse
         
@@ -74,6 +75,7 @@ class dsymatrix:
     
     def change(self,A,i):
         
+        i += self.nObs
         
         ### updating inverse
         
@@ -103,7 +105,7 @@ X = np.array([[0,eps/np.sqrt(1+eps**2),1/np.sqrt(1+eps**2)],[0,-eps/np.sqrt(1+ep
 V = X@np.transpose(X)    
    
 
-sigma = dsymatrix(100,V)
+sigma = dsymatrix(100,V,0)
 
 
 sigma@sigma.inver   
@@ -121,7 +123,7 @@ sigma.change([[0],[0],[1]], 2)
 sigma
 sigma@sigma.inver  
 
-sigma = dsymatrix(100,np.array([[1,2,3],[4,5,6],[7,8,9]]))
+sigma = dsymatrix(100,np.array([[1,2,3],[4,5,6],[7,8,9]]),0)
 
 sigma
 sigma.ind
