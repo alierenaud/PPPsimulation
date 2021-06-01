@@ -31,13 +31,39 @@ from dmatrix import dsymatrix
 # along with the its conditionnal GP value
 ###
 
-def insProp(thisGP, locObs, valObs, Sigma, Sigma_inv):
+def insProp(lam, thisGP, locations, values, Sigma):
     
-    newLoc =  random.uniform(size=(1, 2))
+    newLoc =  random.uniform(size=(2))
     
-    valNewLoc, newSigma, newSigma_inv = thisGP.rCondGP1DSigma(newLoc, locObs, valObs, Sigma, Sigma_inv)
     
-    return(newLoc, valNewLoc, newSigma, newSigma_inv)
+    ## propose new value from GP(.|totVal)
+    
+    s_11 = thisGP.cov([newLoc],[newLoc])
+    S_21 = thisGP.cov(locations.totLoc(),[newLoc])
+    
+    S_12S_22m1 = np.transpose(S_21)@Sigma.inver
+    
+    mu = S_12S_22m1@values.totLoc()
+    sig = s_11 - S_12S_22m1@S_21
+    
+    newVal = np.sqrt(sig)*np.random.normal()+mu
+    
+    acc_ins = (1-b(locations.nThin+1))/b(locations.nThin)*lam/(locations.nThin+1)/(1+np.exp(newVal))
+        
+    U = random.uniform(size=1)
+        
+    if U < acc_ins:
+        
+        locations.birth(newLoc)
+        values.birth(newVal)
+        
+
+        
+        Sigma.concat(S_21,s_11)
+    
+    
+    
+
 
 
 
@@ -61,18 +87,30 @@ def zeroMean(x):
 # Takes the location of thinned points and removes 1 uniformly
 ###
 
-def delProp(locThin, valThin):
+def delProp(lam, locations, values, Sigma):
     
-    nlocThin = locThin.shape[0]
+
     
-    delInd = random.choice(np.array(range(0,nlocThin)))
+    delInd = random.choice(np.array(range(0,locations.nThin)))
     
-    oldVal = valThin[delInd]
+    oldVal = values.getThinLoc(delInd)
     
-    newLocThin = np.delete(locThin, delInd, 0)
-    newValThin = np.delete(valThin, delInd, 0)
+    acc_del = b(locations.nThin-1)/(1-b(locations.nThin))*locations.nThin/lam*(1+np.exp(oldVal))
+                                                  
+    U = random.uniform(size=1)
+        
+    if U < acc_del:
+        locations.death(delInd)
+        values.death(delInd)
+        
+
+        
+        Sigma.delete(delInd)
     
-    return(oldVal,newLocThin,newValThin, delInd)
+    
+
+    
+
 
 # ### TESTER: delProp
 # newGP = GP(zeroMean,gaussianCov(1,1))
@@ -141,43 +179,42 @@ def woodDelInv(Sigma,Sigma_inv,i):
 # inserts or deletes a thinned event along with the GP value
 ###
 
-def nthinSampler(lam, thisGP, locThin, valThin, locObs, valObs, Sigma, Sigma_inv):
+def nthinSampler(lam, thisGP, locations, values, Sigma):
     
-    nthin = locThin.shape[0]
+
     
-    B = random.binomial(1,b(nthin),1)
+    B = random.binomial(1,b(locations.nThin),1)
     
     if B:
-        locTot = np.concatenate((locThin, locObs))
-        valTot = np.concatenate((valThin, valObs))
+
         
-        newLoc, newVal, newSigma, newSigma_inv = insProp(thisGP, locTot, valTot, Sigma, Sigma_inv)
+        insProp(lam, thisGP, locations, values, Sigma)
         
-        acc_ins = (1-b(nthin+1))/b(nthin)*lam/(nthin+1)/(1+np.exp(newVal))
+        # acc_ins = (1-b(nthin+1))/b(nthin)*lam/(nthin+1)/(1+np.exp(newVal))
         
-        U = random.uniform(size=1)
+        # U = random.uniform(size=1)
         
-        if U < acc_ins:
-            locThin = np.concatenate((newLoc, locThin))
-            valThin = np.concatenate((newVal, valThin))
-            Sigma=newSigma
-            Sigma_inv=newSigma_inv
+        # if U < acc_ins:
+        #     locThin = np.concatenate((newLoc, locThin))
+        #     valThin = np.concatenate((newVal, valThin))
+        #     Sigma=newSigma
+        #     Sigma_inv=newSigma_inv
     else:
-        oldVal, newThinLocs, newThinVal, delInd = delProp(locThin, valThin)
+        delProp(lam, locations, values, Sigma)
         
-        acc_del = b(nthin-1)/(1-b(nthin))*nthin/lam*(1+np.exp(oldVal))
+        # acc_del = b(nthin-1)/(1-b(nthin))*nthin/lam*(1+np.exp(oldVal))
                                                   
-        U = random.uniform(size=1)
+        # U = random.uniform(size=1)
         
-        if U < acc_del:
-            locThin = newThinLocs
-            valThin = newThinVal
-            Sigma_inv = woodDelInv(Sigma,Sigma_inv,delInd)
-            Sigma = np.delete(np.delete(Sigma, delInd, 0), delInd, 1)
+        # if U < acc_del:
+        #     locThin = newThinLocs
+        #     valThin = newThinVal
+        #     Sigma_inv = woodDelInv(Sigma,Sigma_inv,delInd)
+        #     Sigma = np.delete(np.delete(Sigma, delInd, 0), delInd, 1)
             
             
 
-    return(locThin, valThin, Sigma, Sigma_inv)
+
     
 # ### TESTER: nthinSampler
 # newGP = GP(zeroMean,gaussianCov(1,1))
@@ -317,6 +354,7 @@ def locationMove(kappa, thisGP, locations, values, Sigma):
     newVal = np.sqrt(sig)*np.random.normal()+mu
     
     
+    ## accept-reject
     acc_loc = kernelBeta(moveLoc, newLoc, kappa)/(1+np.exp(newVal))*(1+np.exp(values.getThinLoc(moveInd)))/kernelBeta(newLoc, moveLoc, kappa) 
         
     U = random.uniform(size=1)
