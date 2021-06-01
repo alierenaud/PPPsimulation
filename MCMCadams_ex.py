@@ -21,7 +21,7 @@ def fct(x):
 # def fct(x):
 #     return(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.007)*0.8+0.10)
 
-lam_sim=500
+lam_sim=1000
 
 pointpo = PPP.randomNonHomog(lam_sim,fct)
 pointpo.plot()
