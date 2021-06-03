@@ -120,6 +120,8 @@ class GP:
     
 def gaussianCov(sigma2,l):
     def evalCov(x,y):
+
+        
         return(sigma2*np.exp(-distance_matrix(x,y)/l))
     return(evalCov)
 
@@ -131,8 +133,8 @@ def indCov(sigma2):
             return(0)
     return(evalCov)     
 
-def rMultNorm(n,mu,Sigma):
-    Z = random.normal(size=(n,1))
+def rMultNorm(mu,Sigma):
+    Z = random.normal(size=(Sigma.shape[0],1))
     L = np.linalg.cholesky(Sigma)
     return(np.matmul(L,Z)+mu)
     
