@@ -361,11 +361,11 @@ class bdmatrix:
         
         
         
-    # def __getitem__(self, items):
-    #     if isinstance(items, int):
-    #         return([self.matrix[i,:] for i in [self.indTable[items]]])
-    #     else:
-    #         return([self.matrix[i,:] for i in self.indTable[items]])
+    def __getitem__(self, items):
+        if isinstance(items, int):
+            return([self.matrix[i,:] for i in [self.indTable[items]]])
+        else:
+            return([self.matrix[i,:] for i in self.indTable[items]])
             
         
         

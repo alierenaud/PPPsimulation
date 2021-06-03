@@ -720,6 +720,9 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
         
         
         ### next sample
+        locations.nextSamp()
+        values.nextSamp()
+        
         
         print(i)
         i+=1
