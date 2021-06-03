@@ -40,9 +40,9 @@ t1 = time.time()
 total1 = t1-t0
 
 
-### do some plot
+# ### do some plot
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 
 # fig = plt.figure()
@@ -79,73 +79,73 @@ import matplotlib.pyplot as plt
 
 
 
-plt.plot(lams)
+# plt.plot(lams)
 
 
 
 
-def makeGrid(xlim,ylim,res):
-    grid = np.ndarray((res**2,2))
-    xlo = xlim[0]
-    xhi = xlim[1]
-    xrange = xhi - xlo
-    ylo = ylim[0]
-    yhi = ylim[1]
-    yrange = yhi - ylo
-    xs = np.arange(xlo, xhi, step=xrange/res) + xrange/res*0.5
-    ys = np.arange(ylo, yhi, step=yrange/res) + yrange/res*0.5
-    i=0
-    for x in xs:
-        j=0
-        for y in ys:
-            grid[i*res+j,:] = [x,y]
-            j+=1
-        i+=1
-    return(grid)
+# def makeGrid(xlim,ylim,res):
+#     grid = np.ndarray((res**2,2))
+#     xlo = xlim[0]
+#     xhi = xlim[1]
+#     xrange = xhi - xlo
+#     ylo = ylim[0]
+#     yhi = ylim[1]
+#     yrange = yhi - ylo
+#     xs = np.arange(xlo, xhi, step=xrange/res) + xrange/res*0.5
+#     ys = np.arange(ylo, yhi, step=yrange/res) + yrange/res*0.5
+#     i=0
+#     for x in xs:
+#         j=0
+#         for y in ys:
+#             grid[i*res+j,:] = [x,y]
+#             j+=1
+#         i+=1
+#     return(grid)
 
 
-res = 40
-gridLoc = makeGrid([0,1], [0,1], res)
+# res = 40
+# gridLoc = makeGrid([0,1], [0,1], res)
 
 
-def expit(x):
-    return(np.exp(x)/(1+np.exp(x)))
+# def expit(x):
+#     return(np.exp(x)/(1+np.exp(x)))
 
 
-resGP = np.empty(shape=niter,dtype=np.ndarray)
-i=0
-t0 = time.time()
-while(i < niter):
-    locations.sampNb=i
-    values.sampNb=i
-    resGP[i] = lams[i]*expit(newGP.rCondGP(gridLoc,locations.totLoc(),values.totLoc()))
-    print(i)
-    i+=1
-t1 = time.time()
+# resGP = np.empty(shape=niter,dtype=np.ndarray)
+# i=0
+# t0 = time.time()
+# while(i < niter):
+#     locations.sampNb=i
+#     values.sampNb=i
+#     resGP[i] = lams[i]*expit(newGP.rCondGP(gridLoc,locations.totLoc(),values.totLoc()))
+#     print(i)
+#     i+=1
+# t1 = time.time()
 
-total2 = t1-t0
+# total2 = t1-t0
 
 
-### plot mean intensity
+# ### plot mean intensity
 
-imGP = np.transpose(np.mean(resGP[100:]).reshape(res,res))
+# imGP = np.transpose(np.mean(resGP[100:]).reshape(res,res))
     
-x = np.linspace(0,1, res+1) 
-y = np.linspace(0,1, res+1) 
-X, Y = np.meshgrid(x,y) 
+# x = np.linspace(0,1, res+1) 
+# y = np.linspace(0,1, res+1) 
+# X, Y = np.meshgrid(x,y) 
     
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.set_aspect('equal')
+# fig = plt.figure()
+# ax = fig.add_subplot(111)
+# ax.set_aspect('equal')
     
-plt.pcolormesh(X,Y,imGP, cmap='cool')
+# plt.pcolormesh(X,Y,imGP, cmap='cool')
     
-plt.xlim(0,1)
-plt.ylim(0,1)
-plt.colorbar()
-plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
+# plt.xlim(0,1)
+# plt.ylim(0,1)
+# plt.colorbar()
+# plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
     
-plt.show()
+# plt.show()
 
 
 
