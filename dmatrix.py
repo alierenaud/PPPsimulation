@@ -9,6 +9,7 @@ Created on Tue May 25 11:37:17 2021
 import numpy as np
 
 
+
 class dsymatrix:
     
     def __init__(self, size, arr, nObs):
@@ -31,19 +32,22 @@ class dsymatrix:
         nb += self.nObs
         
         ### updating inverse
-        
+
         U = np.zeros(shape=(self.size,2))
         U[:,[1]] = self.matrix[np.ix_(self.ind,[self.ind[nb]])]
         U[nb,:] = [1,0]
+
         
         V = np.transpose(U)[::-1,:]
         
-        SinvU = self.inver@U
-        temp = self.inver + SinvU@np.linalg.inv(np.identity(2) - V@SinvU)@V@self.inver
-        
-        
+
+        SinvU = np.dot(self.inver,U)
+        temp = self.inver + np.dot(np.dot(np.dot(SinvU,np.linalg.inv(np.identity(2) - V@SinvU)),V),self.inver)
+
+
         indmNb = [x for x in list(range(0,self.size)) if x !=nb]
         self.inver = temp[np.ix_(indmNb,indmNb)]
+
         
         self.indCem.insert(0,self.ind.pop(nb))
         self.size -= 1
@@ -60,12 +64,12 @@ class dsymatrix:
         
         ### updating inverse
         
-        SA = self.inver@A
-        s = 1/(a-AT@SA)
+        SA = np.dot(self.inver,A)
+        s = 1/(a-np.dot(AT,SA))
         SAT = np.transpose(SA)
         
         temp = np.ndarray((self.size,self.size))
-        temp[np.ix_(list(range(0,self.size-1)),list(range(0,self.size-1)))] = self.inver + s*SA@SAT
+        temp[np.ix_(list(range(0,self.size-1)),list(range(0,self.size-1)))] = self.inver + s*np.dot(SA,SAT)
         temp[np.ix_(list(range(0,self.size-1)),[-1])] = -s*SA
         temp[np.ix_([-1],list(range(0,self.size-1)))] = -s*SAT
         temp[-1,-1] = s
@@ -85,8 +89,8 @@ class dsymatrix:
         
         V = np.transpose(U)[::-1,:]
         
-        SinvU = self.inver@U
-        self.inver = self.inver - SinvU@np.linalg.inv(np.identity(2) + V@SinvU)@V@self.inver
+        SinvU = np.dot(self.inver,U)
+        self.inver = self.inver - np.dot(np.dot(np.dot(SinvU,np.linalg.inv(np.identity(2) + V@SinvU)),V),self.inver)
         
         self.matrix[np.ix_([self.ind[i]],self.ind)] = np.transpose(A)
         self.matrix[np.ix_(self.ind,[self.ind[i]])] = A
