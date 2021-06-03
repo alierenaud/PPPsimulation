@@ -27,9 +27,9 @@ pointpo = PPP.randomNonHomog(lam_sim,fct)
 pointpo.plot()
 
 
-newGP = GP(zeroMean,gaussianCov(2,1))
+newGP = GP(zeroMean,gaussianCov(2,0.5))
 
-niter=500
+niter=350
 
 import time
 
@@ -79,7 +79,7 @@ import matplotlib.pyplot as plt
 
 
 
-# plt.plot(lams)
+plt.plot(lams)
 
 
 

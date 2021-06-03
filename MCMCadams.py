@@ -41,10 +41,10 @@ def insProp(lam, thisGP, locations, values, Sigma):
     s_11 = thisGP.cov([newLoc],[newLoc])
     S_21 = thisGP.cov(locations.totLoc(),[newLoc])
     
-    S_12S_22m1 = np.transpose(S_21)@Sigma.inver
+    S_12S_22m1 = np.dot(np.transpose(S_21),Sigma.inver)
     
-    mu = S_12S_22m1@values.totLoc()
-    sig = s_11 - S_12S_22m1@S_21
+    mu = np.dot(S_12S_22m1,values.totLoc())
+    sig = s_11 - np.dot(S_12S_22m1,S_21)
     
     newVal = np.sqrt(sig)*np.random.normal()+mu
     
@@ -156,23 +156,23 @@ def alpha(nthin):
 # inversion of inside block of matrix
 ###
 
-def woodDelInv(Sigma,Sigma_inv,i):
+# def woodDelInv(Sigma,Sigma_inv,i):
     
-    n = Sigma.shape[0]
+#     n = Sigma.shape[0]
 
-    V = np.concatenate(([Sigma[i,:]],[np.zeros(n)]))
-    V[:,i] = [0,1] 
+#     V = np.concatenate(([Sigma[i,:]],[np.zeros(n)]))
+#     V[:,i] = [0,1] 
 
-    U = np.transpose(V)[:,::-1]
+#     U = np.transpose(V)[:,::-1]
     
 
-    B_inv = Sigma_inv + Sigma_inv@U@np.linalg.inv(np.identity(2)-V@Sigma_inv@U)@V@Sigma_inv
+#     B_inv = Sigma_inv + Sigma_inv@U@np.linalg.inv(np.identity(2)-V@Sigma_inv@U)@V@Sigma_inv
 
-    B_inv_del = np.delete(np.delete(B_inv,i,0),i,1)
+#     B_inv_del = np.delete(np.delete(B_inv,i,0),i,1)
 
 
     
-    return(B_inv_del)
+#     return(B_inv_del)
 
 
 ###
@@ -346,10 +346,10 @@ def locationMove(kappa, thisGP, locations, values, Sigma):
     s_11 = thisGP.cov([newLoc],[newLoc])
     S_21 = thisGP.cov(locations.totLoc(),[newLoc])
     
-    S_12S_22m1 = np.transpose(S_21)@Sigma.inver
+    S_12S_22m1 = np.dot(np.transpose(S_21),Sigma.inver)
     
-    mu = S_12S_22m1@values.totLoc()
-    sig = s_11 - S_12S_22m1@S_21
+    mu = np.dot(S_12S_22m1,values.totLoc())
+    sig = s_11 - np.dot(S_12S_22m1,S_21)
     
     newVal = np.sqrt(sig)*np.random.normal()+mu
     
@@ -493,8 +493,8 @@ def expit(x):
 
 def U(whiteVal, A, nObs):
     
-    return(np.sum(np.log(1+np.exp(-A[:nObs,:]@whiteVal))) + 
-           np.sum(np.log(1+np.exp(A[nObs:,:]@whiteVal))) +
+    return(np.sum(np.log(1+np.exp(np.dot(-A[:nObs,:],whiteVal)))) + 
+           np.sum(np.log(1+np.exp(np.dot(A[nObs:,:],whiteVal)))) +
            1/2*np.sum(whiteVal**2))
     
 # ### TESTER: U
@@ -520,8 +520,8 @@ def U(whiteVal, A, nObs):
 
 def U_prime(whiteVal, A, nObs):
 
-    return(-np.transpose(np.transpose(expit(-A[:nObs,:]@whiteVal))@A[:nObs,:]) +
-           np.transpose(np.transpose(expit(A[nObs:,:]@whiteVal))@A[nObs:,:]) +
+    return(-np.transpose(np.dot(np.transpose(expit(np.dot(-A[:nObs,:],whiteVal))),A[:nObs,:])) +
+           np.transpose(np.dot(np.transpose(expit(np.dot(A[nObs:,:],whiteVal))),A[nObs:,:])) +
            whiteVal)
 
 # ### TESTER: U_prime
@@ -551,7 +551,7 @@ def functionSampler(delta,L,values,Sigma):
     
     nObs = values.nObs
     ntot = values.nThin + nObs
-    whiteVal = sp.linalg.solve_triangular(A,np.identity(ntot),lower=True)@values.totLoc()
+    whiteVal = np.dot(sp.linalg.solve_triangular(A,np.identity(ntot),lower=True),values.totLoc())
     
     kinVal = random.normal(size=(ntot,1))
     
@@ -574,7 +574,7 @@ def functionSampler(delta,L,values,Sigma):
     Uf = random.uniform(size=1)
         
     if Uf < a_func:
-        values.newVals(A@whiteVal_prime)
+        values.newVals(np.dot(A,whiteVal_prime))
     
 
 
