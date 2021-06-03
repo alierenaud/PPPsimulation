@@ -662,15 +662,15 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
     totLocInit = np.concatenate((thisPPP.loc,PPP.randomHomog(lam=lam_init).loc),0)
     nObs = thisPPP.loc.shape[0]
     
-    locations = bdmatrix(5*lam_init + size*nInsDelMov,totLocInit,nObs,size) # initial size is a bit of black magic
+    locations = bdmatrix(10*lam_init + size*nInsDelMov,totLocInit,nObs,size) # initial size is a bit of black magic
     
     ### cov matrix initialization
     
-    Sigma = dsymatrix(5*lam_init,thisGP.covMatrix(totLocInit),nObs)
+    Sigma = dsymatrix(10*lam_init,thisGP.covMatrix(totLocInit),nObs)
     
     ### GP values container initialization
     
-    values = bdmatrix(4*lam_init*size,rMultNorm(0,Sigma.sliceMatrix()),nObs,size)
+    values = bdmatrix(10*lam_init*size,rMultNorm(0,Sigma.sliceMatrix()),nObs,size)
     
     
     ### parameters containers
