@@ -30,11 +30,12 @@ pointpo.plot()
 newGP = GP(zeroMean,gaussianCov(2,0.5))
 
 niter=1000
+nInsDelMov = 40
 
 import time
 
 t0 = time.time()
-locations,values,lams = MCMCadams(niter,100,newGP,pointpo,20,10,0.1,10,lam_sim,1000)
+locations,values,lams = MCMCadams(niter,lam_sim,newGP,pointpo,nInsDelMov,10,0.1,10,lam_sim,1000)
 t1 = time.time()
 
 total1 = t1-t0
