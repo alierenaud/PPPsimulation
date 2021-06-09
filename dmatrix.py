@@ -112,47 +112,47 @@ V = X@np.transpose(X)
 sigma = dsymatrix(100,V,0)
 
 
-sigma@sigma.inver   
+# sigma@sigma.inver   
 
-sigma.concat([[0],[0],[0]], 1) 
-sigma
-sigma@sigma.inver 
+# sigma.concat([[0],[0],[0]], 1) 
+# sigma
+# sigma@sigma.inver 
 
-sigma.delete(0)
-sigma
-sigma@sigma.inver    
-
-
-sigma.change([[0],[0],[1]], 2)
-sigma
-sigma@sigma.inver  
-
-sigma = dsymatrix(100,np.array([[1,2,3],[4,5,6],[7,8,9]]),0)
-
-sigma
-sigma.ind
-sigma.indCem
-
-sigma.sliceMatrix()
-
-sigma.delete(0)
+# sigma.delete(0)
+# sigma
+# sigma@sigma.inver    
 
 
-sigma
-sigma.ind
-sigma.indCem
+# sigma.change([[0],[0],[1]], 2)
+# sigma
+# sigma@sigma.inver  
 
-sigma.concat(np.array([[1],[0]]),1)
+# sigma = dsymatrix(100,np.array([[1,2,3],[4,5,6],[7,8,9]]),0)
 
-sigma
+# sigma
+# sigma.ind
+# sigma.indCem
 
-sigma.size
+# sigma.sliceMatrix()
 
-sigma.change([[1],[1],[1]], 2)
+# sigma.delete(0)
 
-sigma
 
-sigma@np.array([[1],[1],[1]])    
+# sigma
+# sigma.ind
+# sigma.indCem
+
+# sigma.concat(np.array([[1],[0]]),1)
+
+# sigma
+
+# sigma.size
+
+# sigma.change([[1],[1],[1]], 2)
+
+# sigma
+
+# sigma@np.array([[1],[1],[1]])    
     
 
 
