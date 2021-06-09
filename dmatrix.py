@@ -91,7 +91,7 @@ class dsymatrix:
         SinvU = np.dot(self.inver[:self.nTot,:self.nTot],U)
         self.inver[:self.nTot,:self.nTot] = self.inver[:self.nTot,:self.nTot] - np.dot(np.dot(np.dot(SinvU,np.linalg.inv(np.identity(2) + V@SinvU)),V),self.inver[:self.nTot,:self.nTot])
         
-        self.matrix[i,:self.nTot] = np.transpose(A)
+        self.matrix[i,:self.nTot] = A
         self.matrix[:self.nTot,i] = A
         
         
