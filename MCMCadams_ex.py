@@ -21,7 +21,7 @@ def fct(x):
 # def fct(x):
 #     return(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.007)*0.8+0.10)
 
-lam_sim=300
+lam_sim=700
 
 pointpo = PPP.randomNonHomog(lam_sim,fct)
 pointpo.plot()
@@ -30,7 +30,7 @@ pointpo.plot()
 newGP = GP(zeroMean,gaussianCov(2,0.5))
 
 niter=500
-nInsDelMov = 20
+nInsDelMov = 40
 
 import time
 
