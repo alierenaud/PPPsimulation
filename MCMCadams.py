@@ -41,7 +41,7 @@ def insProp(lam, thisGP, locations, values, Sigma):
     s_11 = thisGP.cov([newLoc],[newLoc])
     S_21 = thisGP.cov(locations.totLoc(),[newLoc])
     
-    S_12S_22m1 = np.dot(np.transpose(S_21),Sigma.inver)
+    S_12S_22m1 = np.dot(np.transpose(S_21),Sigma.inver[:Sigma.nTot,:Sigma.nTot])
     
     mu = np.dot(S_12S_22m1,values.totLoc())
     sig = s_11 - np.dot(S_12S_22m1,S_21)
@@ -59,7 +59,7 @@ def insProp(lam, thisGP, locations, values, Sigma):
         
 
         
-        Sigma.concat(S_21,s_11)
+        Sigma.concat(S_21[:,0],s_11)
     
     
     
@@ -346,7 +346,7 @@ def locationMove(kappa, thisGP, locations, values, Sigma):
     s_11 = thisGP.cov([newLoc],[newLoc])
     S_21 = thisGP.cov(locations.totLoc(),[newLoc])
     
-    S_12S_22m1 = np.dot(np.transpose(S_21),Sigma.inver)
+    S_12S_22m1 = np.dot(np.transpose(S_21),Sigma.inver[:Sigma.nTot,:Sigma.nTot])
     
     mu = np.dot(S_12S_22m1,values.totLoc())
     sig = s_11 - np.dot(S_12S_22m1,S_21)
@@ -366,7 +366,7 @@ def locationMove(kappa, thisGP, locations, values, Sigma):
         
         S_21[locations.nObs+moveInd,:] = s_11
         
-        Sigma.change(S_21,moveInd)
+        Sigma.change(S_21[:,0],moveInd)
 
 
 # ### TESTER locationMove
@@ -547,7 +547,7 @@ def U_prime(whiteVal, A, nObs):
 
 def functionSampler(delta,L,values,Sigma):
     
-    A = np.linalg.cholesky(Sigma.sliceMatrix())
+    A = np.linalg.cholesky(Sigma.matrix[:Sigma.nTot,:Sigma.nTot])
     
     nObs = values.nObs
     ntot = values.nThin + nObs
@@ -670,7 +670,7 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
     
     ### GP values container initialization
     
-    values = bdmatrix(10*lam_init*size,rMultNorm(0,Sigma.sliceMatrix()),nObs,size)
+    values = bdmatrix(10*lam_init*size,rMultNorm(0,Sigma.matrix[:Sigma.nTot,:Sigma.nTot]),nObs,size)
     
     
     ### parameters containers

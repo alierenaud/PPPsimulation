@@ -14,15 +14,14 @@ class dsymatrix:
     
     def __init__(self, size, arr, nObs):
         self.matrix = np.ndarray((size,size))
-        self.ind = list(range(0,arr.shape[0]))
-        self.indCem = list(range(arr.shape[0],size))
-        self.matrix[np.ix_(self.ind,self.ind)] = arr
-        self.inver = np.linalg.inv(arr)
-        self.size = len(self.ind)
+        self.inver = np.ndarray((size,size))
+        self.nTot = arr.shape[0] 
+        self.matrix[:self.nTot,:self.nTot] = arr
+        self.inver[:self.nTot,:self.nTot] = np.linalg.inv(arr)
         self.nObs = nObs
         
-    def sliceMatrix(self):
-        return self.matrix[np.ix_(self.ind,self.ind)]
+    # def sliceMatrix(self):
+    #     self.matrix[:self.nTot,:self.nTot]
     
     # def size(self):
     #     return(len(self.ind))
@@ -33,49 +32,49 @@ class dsymatrix:
         
         ### updating inverse
 
-        U = np.zeros(shape=(self.size,2))
-        U[:,[1]] = self.matrix[np.ix_(self.ind,[self.ind[nb]])]
+        U = np.zeros(shape=(self.nTot,2))
+        U[:,1] = self.matrix[:self.nTot,nb]
         U[nb,:] = [1,0]
 
         
         V = np.transpose(U)[::-1,:]
         
 
-        SinvU = np.dot(self.inver,U)
-        temp = self.inver + np.dot(np.dot(np.dot(SinvU,np.linalg.inv(np.identity(2) - V@SinvU)),V),self.inver)
+        SinvU = np.dot(self.inver[:self.nTot,:self.nTot],U)
+        self.inver[:self.nTot,:self.nTot] = self.inver[:self.nTot,:self.nTot] + np.dot(np.dot(np.dot(SinvU,np.linalg.inv(np.identity(2) - V@SinvU)),V),self.inver[:self.nTot,:self.nTot])
 
 
-        indmNb = [x for x in list(range(0,self.size)) if x !=nb]
-        self.inver = temp[np.ix_(indmNb,indmNb)]
-
+        self.inver[nb:(self.nTot-1),:self.nTot] = self.inver[(nb+1):self.nTot,:self.nTot]
+        self.inver[:(self.nTot-1),nb:(self.nTot-1)] = self.inver[:(self.nTot-1),(nb+1):self.nTot]
         
-        self.indCem.insert(0,self.ind.pop(nb))
-        self.size -= 1
+        
+        self.matrix[nb:(self.nTot-1),:self.nTot] = self.matrix[(nb+1):self.nTot,:self.nTot]
+        self.matrix[:(self.nTot-1),nb:(self.nTot-1)] = self.matrix[:(self.nTot-1),(nb+1):self.nTot]
+        
+        self.nTot -= 1
         
     
     def concat(self,A,a):
-        newInd = self.indCem.pop(0)
         AT = np.transpose(A)
-        self.matrix[np.ix_([newInd],self.ind)] = AT
-        self.matrix[np.ix_(self.ind,[newInd])] = A
-        self.matrix[np.ix_([newInd],[newInd])] = a
-        self.ind.append(newInd)
-        self.size += 1
+        self.matrix[self.nTot,:self.nTot] = AT
+        self.matrix[:self.nTot,self.nTot] = A
+        self.matrix[self.nTot,self.nTot] = a
+        
         
         ### updating inverse
         
-        SA = np.dot(self.inver,A)
+        SA = np.dot(self.inver[:self.nTot,:self.nTot],A)
         s = 1/(a-np.dot(AT,SA))
-        SAT = np.transpose(SA)
         
-        temp = np.ndarray((self.size,self.size))
-        temp[np.ix_(list(range(0,self.size-1)),list(range(0,self.size-1)))] = self.inver + s*np.dot(SA,SAT)
-        temp[np.ix_(list(range(0,self.size-1)),[-1])] = -s*SA
-        temp[np.ix_([-1],list(range(0,self.size-1)))] = -s*SAT
-        temp[-1,-1] = s
+        self.inver[:self.nTot,:self.nTot] = self.inver[:self.nTot,:self.nTot] + s*np.dot(np.transpose([SA]),[SA])
+        self.inver[:self.nTot,self.nTot] = -s*SA
+        self.inver[self.nTot,:self.nTot] = -s*SA
+        self.inver[self.nTot,self.nTot] = s
         
-        self.inver = temp
-    
+
+        
+        
+        self.nTot += 1
     
     def change(self,A,i):
         
@@ -83,25 +82,25 @@ class dsymatrix:
         
         ### updating inverse
         
-        U = np.zeros(shape=(self.size,2))
-        U[:,[1]] = A - self.matrix[np.ix_(self.ind,[self.ind[i]])] 
+        U = np.zeros(shape=(self.nTot,2))
+        U[:,1] = A - self.matrix[:self.nTot,i]
         U[i,:] = [1,U[i,1]/2]
         
         V = np.transpose(U)[::-1,:]
         
-        SinvU = np.dot(self.inver,U)
-        self.inver = self.inver - np.dot(np.dot(np.dot(SinvU,np.linalg.inv(np.identity(2) + V@SinvU)),V),self.inver)
+        SinvU = np.dot(self.inver[:self.nTot,:self.nTot],U)
+        self.inver[:self.nTot,:self.nTot] = self.inver[:self.nTot,:self.nTot] - np.dot(np.dot(np.dot(SinvU,np.linalg.inv(np.identity(2) + V@SinvU)),V),self.inver[:self.nTot,:self.nTot])
         
-        self.matrix[np.ix_([self.ind[i]],self.ind)] = np.transpose(A)
-        self.matrix[np.ix_(self.ind,[self.ind[i]])] = A
+        self.matrix[i,:self.nTot] = np.transpose(A)
+        self.matrix[:self.nTot,i] = A
         
         
     
-    def __repr__(self):
-        return(self.sliceMatrix().__repr__())
+    # def __repr__(self):
+    #     return(self.sliceMatrix().__repr__())
     
-    def __matmul__(self,other):
-        return(self.sliceMatrix()@other)
+    # def __matmul__(self,other):
+    #     return(self.sliceMatrix()@other)
    
 n=50
 eps=1/n
@@ -109,50 +108,55 @@ X = np.array([[0,eps/np.sqrt(1+eps**2),1/np.sqrt(1+eps**2)],[0,-eps/np.sqrt(1+ep
 V = X@np.transpose(X)    
    
 
-sigma = dsymatrix(100,V,0)
+# sigma = dsymatrix(100,V,1)
 
 
-sigma@sigma.inver   
+# sigma.matrix[:sigma.nTot,:sigma.nTot]@sigma.inver[:sigma.nTot,:sigma.nTot] 
 
-sigma.concat([[0],[0],[0]], 1) 
-sigma
-sigma@sigma.inver 
+# sigma.concat([0,0,0], 1) 
+# sigma.matrix[:sigma.nTot,:sigma.nTot]
+# sigma.matrix[:sigma.nTot,:sigma.nTot]@sigma.inver[:sigma.nTot,:sigma.nTot] 
 
-sigma.delete(0)
-sigma
-sigma@sigma.inver    
-
-
-sigma.change([[0],[0],[1]], 2)
-sigma
-sigma@sigma.inver  
-
-sigma = dsymatrix(100,np.array([[1,2,3],[4,5,6],[7,8,9]]),0)
-
-sigma
-sigma.ind
-sigma.indCem
-
-sigma.sliceMatrix()
-
-sigma.delete(0)
+# sigma.delete(0)
+# sigma.matrix[:sigma.nTot,:sigma.nTot]
+# sigma.matrix[:sigma.nTot,:sigma.nTot]@sigma.inver[:sigma.nTot,:sigma.nTot]     
 
 
-sigma
-sigma.ind
-sigma.indCem
+# sigma.change([0,0,1], 1)
+# sigma.matrix[:sigma.nTot,:sigma.nTot]
+# sigma.matrix[:sigma.nTot,:sigma.nTot]@sigma.inver[:sigma.nTot,:sigma.nTot]  
 
-sigma.concat(np.array([[1],[0]]),1)
+# sigma.concat([0.9,0,0], 1) 
+# sigma.matrix[:sigma.nTot,:sigma.nTot]
+# sigma.matrix[:sigma.nTot,:sigma.nTot]@sigma.inver[:sigma.nTot,:sigma.nTot] 
 
-sigma
 
-sigma.size
+# sigma = dsymatrix(100,np.array([[1,2,3],[4,5,6],[7,8,9]]),0)
 
-sigma.change([[1],[1],[1]], 2)
+# sigma
+# sigma.ind
+# sigma.indCem
 
-sigma
+# sigma.sliceMatrix()
 
-sigma@np.array([[1],[1],[1]])    
+# sigma.delete(0)
+
+
+# sigma
+# sigma.ind
+# sigma.indCem
+
+# sigma.concat(np.array([[1],[0]]),1)
+
+# sigma
+
+# sigma.size
+
+# sigma.change([[1],[1],[1]], 2)
+
+# sigma
+
+# sigma@np.array([[1],[1],[1]])    
     
 
 

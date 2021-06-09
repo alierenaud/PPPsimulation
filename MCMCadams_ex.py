@@ -21,7 +21,7 @@ def fct(x):
 # def fct(x):
 #     return(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.007)*0.8+0.10)
 
-lam_sim=500
+lam_sim=300
 
 pointpo = PPP.randomNonHomog(lam_sim,fct)
 pointpo.plot()
@@ -29,12 +29,13 @@ pointpo.plot()
 
 newGP = GP(zeroMean,gaussianCov(2,0.5))
 
-niter=1000
+niter=500
+nInsDelMov = 20
 
 import time
 
 t0 = time.time()
-locations,values,lams = MCMCadams(niter,100,newGP,pointpo,20,10,0.1,10,lam_sim,1000)
+locations,values,lams = MCMCadams(niter,lam_sim,newGP,pointpo,nInsDelMov,10,0.1,10,lam_sim,1000)
 t1 = time.time()
 
 total1 = t1-t0
