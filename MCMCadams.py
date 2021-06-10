@@ -654,7 +654,7 @@ def intensitySampler(mu,sigma2,ntot):
 ###
 
 
-def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
+def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2,p):
     
     
     
@@ -662,15 +662,15 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
     totLocInit = np.concatenate((thisPPP.loc,PPP.randomHomog(lam=lam_init).loc),0)
     nObs = thisPPP.loc.shape[0]
     
-    locations = bdmatrix(10*lam_init + size*nInsDelMov,totLocInit,nObs,size) # initial size is a bit of black magic
+    locations = bdmatrix(100*lam_init,totLocInit,nObs,"locations") # initial size is a bit of black magic
     
     ### cov matrix initialization
     
-    Sigma = dsymatrix(10*lam_init,thisGP.covMatrix(totLocInit),nObs)
+    Sigma = dsymatrix(100*lam_init,thisGP.covMatrix(totLocInit),nObs)
     
     ### GP values container initialization
     
-    values = bdmatrix(10*lam_init*size,rMultNorm(0,Sigma.sliceMatrix()),nObs,size)
+    values = bdmatrix(100*lam_init,rMultNorm(0,Sigma.sliceMatrix()),nObs,"values")
     
     
     ### parameters containers
@@ -719,9 +719,10 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2):
         lams[i] = intensitySampler(mu,sigma2,values.nThin + values.nObs)
         
         
-        ### next sample
-        locations.nextSamp()
-        values.nextSamp()
+        if p:
+            ### next sample
+            locations.nextSamp()
+            values.nextSamp()
         
         
         print(i)

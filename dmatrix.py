@@ -308,68 +308,64 @@ sigma = dsymatrix(100,V,0)
 class bdmatrix:
     
     
-    def __init__(self, nrow, arr, nObs, size):
-        ncol = arr.shape[1]
-        self.length = arr.shape[0]
+    def __init__(self, nrow, arr, nObs, name):
+        ncol = arr.shape[1] 
         self.nObs = nObs
-        self.nThin = self.length - nObs
-        self.matrix = np.ndarray((nrow,ncol))
-        self.indTable = np.empty(shape=size,dtype=list)
-        self.indTable[0] = list(range(0,self.length))
-        self.matrix[np.ix_(list(range(0,self.length)),list(range(0,ncol)))] = arr
+        self.matrix = np.ndarray((nrow,ncol)) 
+        self.ind = list(range(0,arr.shape[0]))
+        self.indCem = list(range(arr.shape[0],nrow))
+        self.matrix[:arr.shape[0],:ncol] = arr
         self.sampNb=0
+        self.name=name
+        self.nThin = arr.shape[0] - nObs
       
 
         
         
     def nextSamp(self):
-        self.indTable[self.sampNb+1] = self.indTable[self.sampNb].copy()
+        np.savetxt(self.name+str(self.sampNb)+".csv", self.matrix[self.ind], delimiter=",")
         self.sampNb +=1
         
     def newVals(self,A):
         
-        newLength = self.length + self.nObs + self.nThin
-        self.indTable[self.sampNb] = list(range(self.length, newLength))
-        self.matrix[self.indTable[self.sampNb]] = A
-        
-        
-        
-        self.length=newLength
+        self.matrix[self.ind] = A
+
         
     def birth(self,loc):
-        self.indTable[self.sampNb].append(self.length)
-        self.matrix[self.length]=loc
-        self.length +=1
-        self.nThin += 1
+        
+        
+        newInd = self.indCem.pop(0)
+        self.ind.append(newInd)
+        self.matrix[newInd]=loc
+        self.nThin +=1
         
     def death(self,i):
-        self.indTable[self.sampNb].pop(i+self.nObs)
-        self.nThin -= 1
+        self.indCem.insert(0,self.ind.pop(i+self.nObs))
+        self.nThin -=1
+
         
     def move(self,i,loc):
-        self.indTable[self.sampNb][i+self.nObs] = self.length
-        self.matrix[self.length]=loc
-        self.length +=1
+        self.matrix[self.ind[i+self.nObs]]=loc
         
     def getThinLoc(self,ind):
-        return self.matrix[self.indTable[self.sampNb][self.nObs+ind],:]
+        return self.matrix[self.ind[self.nObs+ind],:]
         
     def obsLoc(self):
-        return self.matrix[self.indTable[self.sampNb][:self.nObs],:]
+        return self.matrix[self.ind[:self.nObs],:]
     
     def thinLoc(self):
-        return self.matrix[self.indTable[self.sampNb][self.nObs:],:]
+        return self.matrix[self.ind[self.nObs:],:]
     
     def totLoc(self):
-        return self.matrix[self.indTable[self.sampNb],:]
+        return self.matrix[self.ind,:]
         
         
         
-    def __getitem__(self, items):
-        if isinstance(items, int):
-            return([self.matrix[i,:] for i in [self.indTable[items]]])
-        else:
-            return([self.matrix[i,:] for i in self.indTable[items]])
+    # def __getitem__(self, items):
+    #     if isinstance(items, int):
+    #         return([self.matrix[i,:] for i in [self.indTable[items]]])
+    #     else:
+    #         return([self.matrix[i,:] for i in self.indTable[items]])
             
         
         
@@ -378,12 +374,12 @@ class bdmatrix:
 
 arr= np.array([[1,2],[3,4],[5,6],[7,8],[9,10]])        
         
-newBDM = bdmatrix(10,arr,2,5)        
+newBDM = bdmatrix(10,arr,2,"first")        
         
-newBDM.indTable        
+newBDM.ind     
 newBDM.obsLoc() 
 newBDM.thinLoc()
-newBDM.nThin
+
 newBDM.totLoc()       
         
 
@@ -391,10 +387,10 @@ newBDM.totLoc()
 ### nextSamp
 
 newBDM.nextSamp()
-newBDM.indTable        
+newBDM.ind    
 newBDM.obsLoc() 
 newBDM.thinLoc()
-newBDM.nThin
+
 newBDM.totLoc()   
 
 ## birth
@@ -405,10 +401,10 @@ newBDM.birth([7,8])
 
 newBDM.death(1)
 
-newBDM.indTable        
+newBDM.ind       
 newBDM.obsLoc() 
 newBDM.thinLoc()
-newBDM.nThin
+
 newBDM.totLoc()   
 
 newBDM.nextSamp()
@@ -420,10 +416,10 @@ newBDM.birth([9,10])
 newBDM.move(0, [11,12])
 
 
-newBDM.indTable        
+newBDM.ind     
 newBDM.obsLoc() 
 newBDM.thinLoc()
-newBDM.nThin
+
 newBDM.getThinLoc(0)
 newBDM.getThinLoc(1)
 newBDM.getThinLoc(2)
@@ -433,7 +429,7 @@ newBDM.totLoc()
 newBDM.death(0)
 newBDM.death(0)
 newBDM.thinLoc()
-newBDM.nThin
+
 
 
 newBDM.matrix
@@ -457,7 +453,7 @@ newBDM.matrix
 
 arr= np.array([[1],[3],[5],[7],[9]])   
 
-newBDM = bdmatrix(50,arr,2,5)    
+newBDM = bdmatrix(50,arr,2,"second")    
 
 
 
@@ -471,32 +467,32 @@ newBDM.thinLoc()
 
 
 newBDM.birth(56)
-newBDM.nThin
+
 newBDM.birth(44)
 newBDM.thinLoc()
 
 newBDM.nextSamp()
-newBDM.indTable
+newBDM.ind
 newBDM.totLoc()
 
 
 newBDM.newVals([[10],[20],[1],[2],[3]])
 newBDM.thinLoc()
-newBDM.indTable
+newBDM.ind
 newBDM.matrix
 
 
 
 newBDM.death(2)
 newBDM.move(1, 7)
-newBDM.nThin
+
 newBDM.thinLoc()
 newBDM.obsLoc()
 newBDM.totLoc()
 
 
 newBDM.nextSamp()
-newBDM.indTable
+newBDM.ind
 
 
 
