@@ -103,13 +103,13 @@ class dsymatrix:
     def __matmul__(self,other):
         return(self.sliceMatrix()@other)
    
-n=50
-eps=1/n
-X = np.array([[0,eps/np.sqrt(1+eps**2),1/np.sqrt(1+eps**2)],[0,-eps/np.sqrt(1+eps**2),1/np.sqrt(1+eps**2)],[1/np.sqrt(2),0,-1/np.sqrt(2)]])
-V = X@np.transpose(X)    
+# n=50
+# eps=1/n
+# X = np.array([[0,eps/np.sqrt(1+eps**2),1/np.sqrt(1+eps**2)],[0,-eps/np.sqrt(1+eps**2),1/np.sqrt(1+eps**2)],[1/np.sqrt(2),0,-1/np.sqrt(2)]])
+# V = X@np.transpose(X)    
    
 
-sigma = dsymatrix(100,V,0)
+# sigma = dsymatrix(100,V,0)
 
 
 # sigma@sigma.inver   
@@ -370,129 +370,129 @@ class bdmatrix:
         
         
 
-### init
+# ### init
 
-arr= np.array([[1,2],[3,4],[5,6],[7,8],[9,10]])        
+# arr= np.array([[1,2],[3,4],[5,6],[7,8],[9,10]])        
         
-newBDM = bdmatrix(10,arr,2,"first")        
+# newBDM = bdmatrix(10,arr,2,"first")        
         
-newBDM.ind     
-newBDM.obsLoc() 
-newBDM.thinLoc()
+# newBDM.ind     
+# newBDM.obsLoc() 
+# newBDM.thinLoc()
 
-newBDM.totLoc()       
-        
-
-
-### nextSamp
-
-newBDM.nextSamp()
-newBDM.ind    
-newBDM.obsLoc() 
-newBDM.thinLoc()
-
-newBDM.totLoc()   
-
-## birth
-
-newBDM.birth([7,8])
-
-## death
-
-newBDM.death(1)
-
-newBDM.ind       
-newBDM.obsLoc() 
-newBDM.thinLoc()
-
-newBDM.totLoc()   
-
-newBDM.nextSamp()
-newBDM.death(2)
-newBDM.birth([9,10])
-
-## move
-
-newBDM.move(0, [11,12])
-
-
-newBDM.ind     
-newBDM.obsLoc() 
-newBDM.thinLoc()
-
-newBDM.getThinLoc(0)
-newBDM.getThinLoc(1)
-newBDM.getThinLoc(2)
-newBDM.totLoc()   
-
-
-newBDM.death(0)
-newBDM.death(0)
-newBDM.thinLoc()
-
-
-
-newBDM.matrix
-
-
-
-
-# ### getitem      
-        
-# newBDM[0]        
-# newBDM[[0,1]]        
-# newBDM[[0,1,2]]        
-        
-# newBDM.indTable        
-# newBDM.matrix         
-        
+# newBDM.totLoc()       
         
 
-### Test as container for values
+
+# ### nextSamp
+
+# newBDM.nextSamp()
+# newBDM.ind    
+# newBDM.obsLoc() 
+# newBDM.thinLoc()
+
+# newBDM.totLoc()   
+
+# ## birth
+
+# newBDM.birth([7,8])
+
+# ## death
+
+# newBDM.death(1)
+
+# newBDM.ind       
+# newBDM.obsLoc() 
+# newBDM.thinLoc()
+
+# newBDM.totLoc()   
+
+# newBDM.nextSamp()
+# newBDM.death(2)
+# newBDM.birth([9,10])
+
+# ## move
+
+# newBDM.move(0, [11,12])
 
 
-arr= np.array([[1],[3],[5],[7],[9]])   
+# newBDM.ind     
+# newBDM.obsLoc() 
+# newBDM.thinLoc()
 
-newBDM = bdmatrix(50,arr,2,"second")    
-
-
-
-newBDM.death(0)
-newBDM.death(1)
-
-newBDM.thinLoc()
-
-newBDM.move(0, 40)
-newBDM.thinLoc()
+# newBDM.getThinLoc(0)
+# newBDM.getThinLoc(1)
+# newBDM.getThinLoc(2)
+# newBDM.totLoc()   
 
 
-newBDM.birth(56)
-
-newBDM.birth(44)
-newBDM.thinLoc()
-
-newBDM.nextSamp()
-newBDM.ind
-newBDM.totLoc()
-
-
-newBDM.newVals([[10],[20],[1],[2],[3]])
-newBDM.thinLoc()
-newBDM.ind
-newBDM.matrix
+# newBDM.death(0)
+# newBDM.death(0)
+# newBDM.thinLoc()
 
 
 
-newBDM.death(2)
-newBDM.move(1, 7)
-
-newBDM.thinLoc()
-newBDM.obsLoc()
-newBDM.totLoc()
+# newBDM.matrix
 
 
-newBDM.nextSamp()
-newBDM.ind
+
+
+# # ### getitem      
+        
+# # newBDM[0]        
+# # newBDM[[0,1]]        
+# # newBDM[[0,1,2]]        
+        
+# # newBDM.indTable        
+# # newBDM.matrix         
+        
+        
+
+# ### Test as container for values
+
+
+# arr= np.array([[1],[3],[5],[7],[9]])   
+
+# newBDM = bdmatrix(50,arr,2,"second")    
+
+
+
+# newBDM.death(0)
+# newBDM.death(1)
+
+# newBDM.thinLoc()
+
+# newBDM.move(0, 40)
+# newBDM.thinLoc()
+
+
+# newBDM.birth(56)
+
+# newBDM.birth(44)
+# newBDM.thinLoc()
+
+# newBDM.nextSamp()
+# newBDM.ind
+# newBDM.totLoc()
+
+
+# newBDM.newVals([[10],[20],[1],[2],[3]])
+# newBDM.thinLoc()
+# newBDM.ind
+# newBDM.matrix
+
+
+
+# newBDM.death(2)
+# newBDM.move(1, 7)
+
+# newBDM.thinLoc()
+# newBDM.obsLoc()
+# newBDM.totLoc()
+
+
+# newBDM.nextSamp()
+# newBDM.ind
 
 
 
