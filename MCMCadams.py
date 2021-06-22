@@ -523,7 +523,7 @@ def U(whiteVal, A, nObs):
 
 def Urange(whiteVal, A, nObs, rho, a, b):
     
-    return(U(whiteVal, A, nObs) + (a-1)*np.log(rho) -b*rho)
+    return(U(whiteVal, A, nObs) - (a-1)*np.log(rho) +b*rho)
 
 
     
@@ -560,7 +560,7 @@ def U_prime(whiteVal, A, nObs):
 # derivative of potential energy in whitened space (AA^T=Sigma) + rho
 ###
 
-def Urange_prime(whiteVal, A, Ainv, Sigma, nObs, rho, a ,b):
+def Urange_prime(whiteVal, A, Ainv, Sigma, nObs, rho, tau, a ,b):
     
     ntot = whiteVal.shape[0]
     vec = np.zeros(shape=(ntot+1,1))
@@ -571,7 +571,7 @@ def Urange_prime(whiteVal, A, Ainv, Sigma, nObs, rho, a ,b):
     H = expit(-A@whiteVal)
     H[nObs:] = H[nObs:]-1
     
-    vec[ntot,:] = (a-1)/rho - b + np.sum(H@np.transpose(whiteVal)*A@PHI(-rho*Ainv@Sigma@np.transpose(Ainv)))
+    vec[ntot,:] = -(a-1)/rho + b - np.sum(H@np.transpose(whiteVal)*A@PHI(Ainv@(Sigma*np.log(tau*Sigma)/rho)@np.transpose(Ainv)))
 
     return(vec)
 
@@ -679,7 +679,7 @@ def functionSampler(delta,L,values,Sigma):
 # sampling the GP values at the thinned and observed events + the range parameter rho
 ###
 
-def functionRangeSampler(delta,L,values,Sigma,rho,a,b):
+def functionRangeSampler(delta,L,values,Sigma,rho,tau,a,b):
     
     
     Sigma_temp = np.copy(Sigma.sliceMatrix())
@@ -693,7 +693,7 @@ def functionRangeSampler(delta,L,values,Sigma,rho,a,b):
     
     kinVal = random.normal(size=(ntot+1,1))
     
-    kinVal_prime = kinVal - delta/2*Urange_prime(whiteVal, A, Ainv, Sigma_temp, nObs, rho, a ,b)
+    kinVal_prime = kinVal - delta/2*Urange_prime(whiteVal, A, Ainv, Sigma_temp, nObs, rho, tau, a ,b)
     posVal_prime = np.concatenate((whiteVal,[[rho]])) + delta*kinVal_prime
     if posVal_prime[ntot] < 0:
             posVal_prime[ntot] *= -1
@@ -705,11 +705,11 @@ def functionRangeSampler(delta,L,values,Sigma,rho,a,b):
     while(l<L):
         rho_temp = posVal_prime[ntot,:]
         
-        Sigma_temp = Sigma_temp**(rho_temp/rho_prev)
+        Sigma_temp = (Sigma_temp*tau)**(rho_temp/rho_prev)/tau
         A = np.linalg.cholesky(Sigma_temp)
         Ainv = sp.linalg.solve_triangular(A,np.identity(ntot),lower=True)
         
-        kinVal_prime = kinVal_prime - delta*Urange_prime(posVal_prime[0:ntot,:],A,Ainv,Sigma_temp, nObs, rho_temp, a ,b)
+        kinVal_prime = kinVal_prime - delta*Urange_prime(posVal_prime[0:ntot,:],A,Ainv,Sigma_temp, nObs, rho_temp, tau, a ,b)
         posVal_prime = posVal_prime + delta*kinVal_prime
         if posVal_prime[ntot] < 0:
             posVal_prime[ntot] *= -1
@@ -720,11 +720,11 @@ def functionRangeSampler(delta,L,values,Sigma,rho,a,b):
         
         l += 1
         
-    Sigma_temp = Sigma_temp**(rho_temp/rho_prev)
+    Sigma_temp = (Sigma_temp*tau)**(rho_temp/rho_prev)/tau
     A = np.linalg.cholesky(Sigma_temp)
     Ainv = sp.linalg.solve_triangular(A,np.identity(ntot),lower=True)    
         
-    kinVal_prime = kinVal_prime - delta/2*Urange_prime(posVal_prime[0:ntot,:],A,Ainv,Sigma_temp, nObs, rho_temp, a ,b)
+    kinVal_prime = kinVal_prime - delta/2*Urange_prime(posVal_prime[0:ntot,:],A,Ainv,Sigma_temp, nObs, rho_temp, tau, a ,b)
     
     a_func = np.exp(-Urange(posVal_prime[0:ntot,:], A, nObs, posVal_prime[ntot,:], a, b)
                     +Urange(whiteVal, A, nObs, rho, a, b)
@@ -736,38 +736,39 @@ def functionRangeSampler(delta,L,values,Sigma,rho,a,b):
     if Uf < a_func:
         values.newVals(np.dot(A,posVal_prime[0:ntot]))
         rho = posVal_prime[ntot]
+        Sigma.reinit(Sigma_temp)
     
     return rho
 
 
-### TESTER: functionRangeSampler
-newGP = GP(zeroMean,expCov(1,1))
+# ### TESTER: functionRangeSampler
+# newGP = GP(zeroMean,expCov(1,1))
 
-lam=10
-pointpo = PPP.randomHomog(lam) 
+# lam=10
+# pointpo = PPP.randomHomog(lam) 
 
-locTot = pointpo.loc
+# locTot = pointpo.loc
 
 
-### cov matrix initialization
-nObs = 3
+# ### cov matrix initialization
+# nObs = 3
     
-Sigma = dsymatrix(100,newGP.covMatrix(locTot),nObs)
+# Sigma = dsymatrix(100,newGP.covMatrix(locTot),nObs)
     
-### GP values container initialization
+# ### GP values container initialization
     
-values = bdmatrix(100,newGP.rGP(locTot),nObs,"values")
+# values = bdmatrix(100,newGP.rGP(locTot),nObs,"values")
 
 
-delta = 0.01
-L = 100
+# delta = 0.01
+# L = 100
 
-a=5
-b1=5
+# a=5
+# b1=5
 
-rho=1
+# rho=1
 
-functionRangeSampler(delta,L,values,Sigma,rho,a,b1)
+# functionRangeSampler(delta,L,values,Sigma,rho,a,b1)
 
 # A = np.linalg.cholesky(Sigma)
 # whiteVal = np.linalg.inv(A)@valTot
@@ -830,9 +831,11 @@ def intensitySampler(mu,sigma2,ntot):
 ###
 
 
-def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2,p):
+def MCMCadams(size,lam_init,rho_init,tau_init,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2,p,a,b):
     
     
+    ### initialize GP
+    thisGP = GP(zeroMean,expCov(tau_init,rho_init))
     
     ### location container initialization
     totLocInit = np.concatenate((thisPPP.loc,PPP.randomHomog(lam=lam_init).loc),0)
@@ -851,10 +854,12 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2,p)
     
     ### parameters containers
     lams = np.empty(shape=(size))
+    rhos = np.empty(shape=(size))
     
     
-### initialization of lambda
+    ### 
     lams[0] = lam_init
+    rhos[0] = rho_init
     
     i=1
     while i < size:
@@ -877,10 +882,10 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2,p)
         
         # whiteVal_prime = sp.linalg.solve_triangular(A,np.identity(ntot),lower=True)@valTot_prime
         
-        functionSampler(delta,L,values,Sigma)
+        # functionSampler(delta,L,values,Sigma)
         
-        
-        
+        rhos[i] = functionRangeSampler(delta,L,values,Sigma,rhos[i-1],tau_init,a,b)
+        thisGP = GP(zeroMean,expCov(tau_init,rhos[i]))
         
         
         
@@ -905,7 +910,7 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2,p)
         i+=1
     
     
-    return(locations, values, lams)
+    return(locations, values, lams, rhos)
 
 # ### TESTER: MCMCadams
 

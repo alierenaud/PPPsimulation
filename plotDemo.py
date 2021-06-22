@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 
 from rGP import GP
 from rGP import gaussianCov
+from rGP import expCov
 from rGP import zeroMean
 
 ### usage example
@@ -137,9 +138,9 @@ fig.savefig("foo3.pdf", bbox_inches='tight')
 ### SGCD with thinned and GP at grid locations
 
 
-lam=400
-tau=4
-rho=4
+lam=100
+tau=1/3
+rho=1
 
 def expit(x):
     return(np.exp(x)/(1+np.exp(x)))
@@ -170,7 +171,7 @@ gridLoc = makeGrid([0,1], [0,1], res)
 
 locs = PPP.randomHomog(lam).loc
 
-newGP = GP(zeroMean,gaussianCov(tau,rho))
+newGP = GP(zeroMean,expCov(tau,rho))
 GPvals = newGP.rGP(np.concatenate((locs,gridLoc)))
 
 

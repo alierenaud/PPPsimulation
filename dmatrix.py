@@ -21,6 +21,12 @@ class dsymatrix:
         self.size = len(self.ind)
         self.nObs = nObs
         
+    def reinit(self,arr):
+        self.ind = list(range(0,arr.shape[0]))
+        self.indCem = list(range(arr.shape[0],self.matrix.shape[0]))
+        self.matrix[np.ix_(self.ind,self.ind)] = arr
+        self.inver = np.linalg.inv(arr)
+        
     def sliceMatrix(self):
         return self.matrix[np.ix_(self.ind,self.ind)]
     
