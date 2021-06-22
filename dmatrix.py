@@ -27,6 +27,10 @@ class dsymatrix:
         self.matrix[np.ix_(self.ind,self.ind)] = arr
         self.inver = np.linalg.inv(arr)
         
+    def rescale(self,a):
+        self.matrix[np.ix_(self.ind,self.ind)] *= a
+        self.inver /= a
+        
     def sliceMatrix(self):
         return self.matrix[np.ix_(self.ind,self.ind)]
     

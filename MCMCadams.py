@@ -822,6 +822,20 @@ def intensitySampler(mu,sigma2,ntot):
 
 
 
+###
+# precision tau sampler
+###
+
+def precisionSampler(a_tau,b_tau,tau_prev,values,Sigma):
+    ntot = values.nThin + values.nObs
+    alpha=a_tau + ntot/2
+    beta=b_tau + np.transpose(values.totLoc())@Sigma.inver@values.totLoc()/2/tau_prev
+    tau = gamma.rvs(alpha, scale=1/beta)
+    
+    Sigma.rescale(tau_prev/tau)
+    return(tau)
+
+
 
 
 
@@ -831,7 +845,7 @@ def intensitySampler(mu,sigma2,ntot):
 ###
 
 
-def MCMCadams(size,lam_init,rho_init,tau_init,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2,p,a,b):
+def MCMCadams(size,lam_init,rho_init,tau_init,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2,p,a,b,a_tau,b_tau):
     
     
     ### initialize GP
@@ -855,11 +869,13 @@ def MCMCadams(size,lam_init,rho_init,tau_init,thisPPP,nInsDelMov,kappa,delta,L,m
     ### parameters containers
     lams = np.empty(shape=(size))
     rhos = np.empty(shape=(size))
+    taus = np.empty(shape=(size))
     
     
     ### 
     lams[0] = lam_init
     rhos[0] = rho_init
+    taus[0] = tau_init
     
     i=1
     while i < size:
@@ -884,8 +900,9 @@ def MCMCadams(size,lam_init,rho_init,tau_init,thisPPP,nInsDelMov,kappa,delta,L,m
         
         # functionSampler(delta,L,values,Sigma)
         
-        rhos[i] = functionRangeSampler(delta,L,values,Sigma,rhos[i-1],tau_init,a,b)
-        thisGP = GP(zeroMean,expCov(tau_init,rhos[i]))
+        rhos[i] = functionRangeSampler(delta,L,values,Sigma,rhos[i-1],taus[i-1],a,b)
+        taus[i] = precisionSampler(a_tau,b_tau,taus[i-1],values,Sigma)
+        thisGP = GP(zeroMean,expCov(taus[i],rhos[i]))
         
         
         
@@ -910,7 +927,7 @@ def MCMCadams(size,lam_init,rho_init,tau_init,thisPPP,nInsDelMov,kappa,delta,L,m
         i+=1
     
     
-    return(locations, values, lams, rhos)
+    return(locations, values, lams, rhos, taus)
 
 # ### TESTER: MCMCadams
 
