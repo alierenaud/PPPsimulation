@@ -682,7 +682,7 @@ def functionSampler(delta,L,values,Sigma):
 def functionRangeSampler(delta,L,values,Sigma,rho,tau,a,b):
     
     
-    Sigma_temp = np.copy(Sigma.sliceMatrix())
+    Sigma_temp = Sigma.sliceMatrix()
     A = np.linalg.cholesky(Sigma_temp)
     
     nObs = values.nObs
