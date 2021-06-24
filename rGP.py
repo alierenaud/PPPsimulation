@@ -125,11 +125,11 @@ def gaussianCov(sigma2,l):
         return(sigma2*np.exp(-distance_matrix(x,y)**2/2/l**2))
     return(evalCov)
 
-def expCov(sigma2,l):
+def expCov(tau,rho):
     def evalCov(x,y):
 
         
-        return(sigma2*np.exp(-distance_matrix(x,y)/l))
+        return(1/tau*np.exp(-distance_matrix(x,y)*rho))
     return(evalCov)
 
 def indCov(sigma2):

@@ -10,6 +10,7 @@ from numpy import random
 from scipy.stats import beta
 from rGP import GP
 from rGP import gaussianCov
+from rGP import expCov
 from rGP import rMultNorm
 #from rGP import indCov
 from rppp import PPP
@@ -488,7 +489,25 @@ def expit(x):
 
 
 ###
-# potential energy in whitened space (AA^T=Sigma) Thinned events are first in Sigma
+# returns lower triangular matrix with half diagonal
+###
+
+def PHI(X):
+    i=0
+    for x in X:
+        x[i] = x[i]/2
+        x[(i+1):] = 0
+        i += 1
+    return X
+
+
+
+# ### TESTER: PHI
+# PHI(np.array([[1.0,2,3],[4,5,6],[7,8,9]]))
+
+
+###
+# potential energy in whitened space (AA^T=Sigma) 
 ###
 
 def U(whiteVal, A, nObs):
@@ -496,6 +515,17 @@ def U(whiteVal, A, nObs):
     return(np.sum(np.log(1+np.exp(np.dot(-A[:nObs,:],whiteVal)))) + 
            np.sum(np.log(1+np.exp(np.dot(A[nObs:,:],whiteVal)))) +
            1/2*np.sum(whiteVal**2))
+
+
+###
+# potential energy in whitened space (AA^T=Sigma) +  rho
+###
+
+def Urange(whiteVal, A, nObs, rho, a, b):
+    
+    return(U(whiteVal, A, nObs) - (a-1)*np.log(rho) +b*rho)
+
+
     
 # ### TESTER: U
 # newGP = GP(zeroMean,gaussianCov(1,1))
@@ -515,14 +545,37 @@ def U(whiteVal, A, nObs):
 # U(whiteVal,A,nthin)
 
 ###
-# derivative of potential energy in whitened space (AA^T=Sigma) Thinned events are first in Sigma
+# derivative of potential energy in whitened space (AA^T=Sigma)
 ###
 
 def U_prime(whiteVal, A, nObs):
 
-    return(-np.transpose(np.dot(np.transpose(expit(np.dot(-A[:nObs,:],whiteVal))),A[:nObs,:])) +
-           np.transpose(np.dot(np.transpose(expit(np.dot(A[nObs:,:],whiteVal))),A[nObs:,:])) +
-           whiteVal)
+    return(np.transpose(np.dot(np.transpose(expit(np.dot(A[nObs:,:],whiteVal))),A[nObs:,:]))
+           -np.transpose(np.dot(np.transpose(expit(np.dot(-A[:nObs,:],whiteVal))),A[:nObs,:]))
+           +whiteVal)
+
+
+
+###
+# derivative of potential energy in whitened space (AA^T=Sigma) + rho
+###
+
+def Urange_prime(whiteVal, A, Ainv, Sigma, nObs, rho, tau, a ,b):
+    
+    ntot = whiteVal.shape[0]
+    vec = np.zeros(shape=(ntot+1,1))
+    
+    
+    vec[0:ntot,:] = U_prime(whiteVal,A,nObs)
+    
+    H = expit(-A@whiteVal)
+    H[nObs:] = H[nObs:]-1
+    
+    vec[ntot,:] = -(a-1)/rho + b - np.sum(H@np.transpose(whiteVal)*A@PHI(Ainv@(Sigma*np.log(tau*Sigma)/rho)@np.transpose(Ainv)))
+
+    return(vec)
+
+
 
 # ### TESTER: U_prime
 # newGP = GP(zeroMean,gaussianCov(1,1))
@@ -575,10 +628,7 @@ def functionSampler(delta,L,values,Sigma):
         
     if Uf < a_func:
         values.newVals(np.dot(A,whiteVal_prime))
-    
-
-
-
+        
 # ### TESTER: functionSampler
 # newGP = GP(zeroMean,gaussianCov(1,1))
 
@@ -592,6 +642,133 @@ def functionSampler(delta,L,values,Sigma):
 # nthin = 3
 # delta = 0.1
 # L = 10
+
+# A = np.linalg.cholesky(Sigma)
+# whiteVal = np.linalg.inv(A)@valTot
+
+# valTot
+# whiteVal = functionSampler(delta,L,whiteVal,A,nthin)
+
+# A@whiteVal
+
+### ###
+
+# newGP = GP(zeroMean,gaussianCov(1,1))
+
+# lam=10
+# pointpo = PPP.randomHomog(lam) 
+
+# locTot = np.array([[0.1,0.1],[0.2,0.2],[0.3,0.3],[0.8,0.8],[0.9,0.9]])
+                    
+# Sigma = newGP.covMatrix(locTot)
+# valTot = newGP.rGP(locTot)
+
+# nthin = 3
+# delta = 0.1
+# L = 10
+
+# A = np.linalg.cholesky(Sigma)
+# whiteVal = np.linalg.inv(A)@valTot
+
+# valTot
+# whiteVal = functionSampler(delta,L,whiteVal,A,nthin)
+
+# A@whiteVal        
+    
+###
+# sampling the GP values at the thinned and observed events + the range parameter rho
+###
+
+def functionRangeSampler(delta,L,values,Sigma,rho,tau,a,b):
+    
+    
+    Sigma_temp = Sigma.sliceMatrix()
+    A = np.linalg.cholesky(Sigma_temp)
+    
+    nObs = values.nObs
+    ntot = values.nThin + nObs
+    
+    Ainv = sp.linalg.solve_triangular(A,np.identity(ntot),lower=True)
+    whiteVal = np.dot(Ainv,values.totLoc())
+    
+    kinVal = random.normal(size=(ntot+1,1))
+    
+    kinVal_prime = kinVal - delta/2*Urange_prime(whiteVal, A, Ainv, Sigma_temp, nObs, rho, tau, a ,b)
+    posVal_prime = np.concatenate((whiteVal,[[rho]])) + delta*kinVal_prime
+    if posVal_prime[ntot] < 0:
+            posVal_prime[ntot] *= -1
+            kinVal_prime[ntot] *= -1
+    
+    rho_prev = rho
+    
+    l=0
+    while(l<L):
+        rho_temp = posVal_prime[ntot,:]
+        
+        Sigma_temp = (Sigma_temp*tau)**(rho_temp/rho_prev)/tau
+        A = np.linalg.cholesky(Sigma_temp)
+        Ainv = sp.linalg.solve_triangular(A,np.identity(ntot),lower=True)
+        
+        kinVal_prime = kinVal_prime - delta*Urange_prime(posVal_prime[0:ntot,:],A,Ainv,Sigma_temp, nObs, rho_temp, tau, a ,b)
+        posVal_prime = posVal_prime + delta*kinVal_prime
+        if posVal_prime[ntot] < 0:
+            posVal_prime[ntot] *= -1
+            kinVal_prime[ntot] *= -1
+        
+        rho_prev = rho_temp
+        rho_temp = posVal_prime[ntot]
+        
+        l += 1
+        
+    Sigma_temp = (Sigma_temp*tau)**(rho_temp/rho_prev)/tau
+    A = np.linalg.cholesky(Sigma_temp)
+    Ainv = sp.linalg.solve_triangular(A,np.identity(ntot),lower=True)    
+        
+    kinVal_prime = kinVal_prime - delta/2*Urange_prime(posVal_prime[0:ntot,:],A,Ainv,Sigma_temp, nObs, rho_temp, tau, a ,b)
+    
+    a_func = np.exp(-Urange(posVal_prime[0:ntot,:], A, nObs, posVal_prime[ntot,:], a, b)
+                    +Urange(whiteVal, A, nObs, rho, a, b)
+                    - 1/2*np.sum(kinVal_prime**2)
+                    + 1/2*np.sum(kinVal**2))
+    
+    Uf = random.uniform(size=1)
+        
+    if Uf < a_func:
+        values.newVals(np.dot(A,posVal_prime[0:ntot]))
+        rho = posVal_prime[ntot]
+        Sigma.reinit(Sigma_temp)
+    
+    return rho
+
+
+# ### TESTER: functionRangeSampler
+# newGP = GP(zeroMean,expCov(1,1))
+
+# lam=10
+# pointpo = PPP.randomHomog(lam) 
+
+# locTot = pointpo.loc
+
+
+# ### cov matrix initialization
+# nObs = 3
+    
+# Sigma = dsymatrix(100,newGP.covMatrix(locTot),nObs)
+    
+# ### GP values container initialization
+    
+# values = bdmatrix(100,newGP.rGP(locTot),nObs,"values")
+
+
+# delta = 0.01
+# L = 100
+
+# a=5
+# b1=5
+
+# rho=1
+
+# functionRangeSampler(delta,L,values,Sigma,rho,a,b1)
 
 # A = np.linalg.cholesky(Sigma)
 # whiteVal = np.linalg.inv(A)@valTot
@@ -645,6 +822,20 @@ def intensitySampler(mu,sigma2,ntot):
 
 
 
+###
+# precision tau sampler
+###
+
+def precisionSampler(a_tau,b_tau,tau_prev,values,Sigma):
+    ntot = values.nThin + values.nObs
+    alpha=a_tau + ntot/2
+    beta=b_tau + np.transpose(values.totLoc())@Sigma.inver@values.totLoc()/2/tau_prev
+    tau = gamma.rvs(alpha, scale=1/beta)
+    
+    Sigma.rescale(tau_prev/tau)
+    return(tau)
+
+
 
 
 
@@ -654,9 +845,11 @@ def intensitySampler(mu,sigma2,ntot):
 ###
 
 
-def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2,p):
+def MCMCadams(size,lam_init,rho_init,tau_init,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2,p,a,b,a_tau,b_tau):
     
     
+    ### initialize GP
+    thisGP = GP(zeroMean,expCov(tau_init,rho_init))
     
     ### location container initialization
     totLocInit = np.concatenate((thisPPP.loc,PPP.randomHomog(lam=lam_init).loc),0)
@@ -675,10 +868,14 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2,p)
     
     ### parameters containers
     lams = np.empty(shape=(size))
+    rhos = np.empty(shape=(size))
+    taus = np.empty(shape=(size))
     
     
-### initialization of lambda
+    ### 
     lams[0] = lam_init
+    rhos[0] = rho_init
+    taus[0] = tau_init
     
     i=1
     while i < size:
@@ -701,10 +898,11 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2,p)
         
         # whiteVal_prime = sp.linalg.solve_triangular(A,np.identity(ntot),lower=True)@valTot_prime
         
-        functionSampler(delta,L,values,Sigma)
+        # functionSampler(delta,L,values,Sigma)
         
-        
-        
+        rhos[i] = functionRangeSampler(delta,L,values,Sigma,rhos[i-1],taus[i-1],a,b)
+        taus[i] = precisionSampler(a_tau,b_tau,taus[i-1],values,Sigma)
+        thisGP = GP(zeroMean,expCov(taus[i],rhos[i]))
         
         
         
@@ -729,7 +927,7 @@ def MCMCadams(size,lam_init,thisGP,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2,p)
         i+=1
     
     
-    return(locations, values, lams)
+    return(locations, values, lams, rhos, taus)
 
 # ### TESTER: MCMCadams
 
