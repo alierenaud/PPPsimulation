@@ -10,7 +10,7 @@ from numpy import random
 import matplotlib.pyplot as plt
 
 from rGP import GP
-from rGP import gaussianCov
+from rGP import expCov
 from rGP import zeroMean
     
 def isInUnitSquare(x):
@@ -40,7 +40,7 @@ class PPP:
     @classmethod
     def randomSGCD(cls,lam,tau,rho):
         newPPP = cls.randomHomog(lam)
-        newGP = GP(zeroMean,gaussianCov(1,1))
+        newGP = GP(zeroMean,expCov(1,1))
         marks = newGP.rGP(newPPP.loc)
         index = np.array(np.greater(expit(marks),random.uniform(size=marks.shape)))
         newPPP.loc = newPPP.loc[np.squeeze(index)]
@@ -83,11 +83,30 @@ class PPP:
         plt.show()
         
 
+class mtPPP:  
+    def __init__(self, pps):
+        self.pps = pps
+        n = [x.loc.shape[0] for x in pps]
+        K = pps.shape[0]
+        c = np.cumsum(n)
+        self.nObs = sum(n)
+        self.typeMatrix = np.zeros(shape=(K,self.nObs))
+        self.typeMatrix[0,0:c[0]] = 1
+        for i in list(range(1,K)):
+            self.typeMatrix[i,c[i-1]:c[i]] = 1
+            
+    def plot(self):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.set_aspect('equal')
 
+        for pp in self.pps:
+            plt.plot(pp.loc[:,0],pp.loc[:,1], 'o')
+        
+        plt.xlim(0,1)
+        plt.ylim(0,1)
 
-
-
-
+        plt.show()
 
 
 

@@ -6,6 +6,7 @@ Created on Mon Jan  4 14:54:01 2021
 """
 
 from rppp import PPP
+from rppp import mtPPP
 import numpy as np
 
 ### usage example
@@ -61,10 +62,19 @@ pointpo = PPP.randomSGCD(lam,tau,rho)
 pointpo.plot()
 
 
+### mtPPP
 
+lam = 5
 
+pp1 = PPP.randomHomog(lam)
+pp2 = PPP.randomHomog(lam)
+pp3 = PPP.randomHomog(lam)
 
+pps = np.array([pp1,pp2,pp3])
 
+mtpp = mtPPP(pps)
+
+mtpp.plot()
 
 
 
