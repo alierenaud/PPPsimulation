@@ -230,14 +230,14 @@ plt.show()
 from scipy.stats import matrix_normal
 # from scipy.stats import multinomial
 
-lam=200
+lam=400
 tau=1
-rho=0.1
+rho=2
 
 locs = PPP.randomHomog(lam).loc
 
 
-newGP = GP(zeroMean,gaussianCov(tau,rho))
+newGP = GP(zeroMean,expCov(tau,rho))
 
 U = newGP.covMatrix(locs)
 

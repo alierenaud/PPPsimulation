@@ -30,107 +30,107 @@ pointpo.plot()
 
 # ### generate a real SGCP #########
 
-# from numpy import random
-# import matplotlib.pyplot as plt
+from numpy import random
+import matplotlib.pyplot as plt
 
-# lam=400
-# tau=1
-# rho=2
+lam=400
+tau=1
+rho=2
 
-# def expit(x):
-#     return(np.exp(x)/(1+np.exp(x)))
+def expit(x):
+    return(np.exp(x)/(1+np.exp(x)))
 
-# def makeGrid(xlim,ylim,res):
-#     grid = np.ndarray((res**2,2))
-#     xlo = xlim[0]
-#     xhi = xlim[1]
-#     xrange = xhi - xlo
-#     ylo = ylim[0]
-#     yhi = ylim[1]
-#     yrange = yhi - ylo
-#     xs = np.arange(xlo, xhi, step=xrange/res) + xrange/res*0.5
-#     ys = np.arange(ylo, yhi, step=yrange/res) + yrange/res*0.5
-#     i=0
-#     for x in xs:
-#         j=0
-#         for y in ys:
-#             grid[i*res+j,:] = [x,y]
-#             j+=1
-#         i+=1
-#     return(grid)
-
-
-# res = 50
-# gridLoc = makeGrid([0,1], [0,1], res)
+def makeGrid(xlim,ylim,res):
+    grid = np.ndarray((res**2,2))
+    xlo = xlim[0]
+    xhi = xlim[1]
+    xrange = xhi - xlo
+    ylo = ylim[0]
+    yhi = ylim[1]
+    yrange = yhi - ylo
+    xs = np.arange(xlo, xhi, step=xrange/res) + xrange/res*0.5
+    ys = np.arange(ylo, yhi, step=yrange/res) + yrange/res*0.5
+    i=0
+    for x in xs:
+        j=0
+        for y in ys:
+            grid[i*res+j,:] = [x,y]
+            j+=1
+        i+=1
+    return(grid)
 
 
-# locs = PPP.randomHomog(lam).loc
-
-# newGP = GP(zeroMean,expCov(tau,rho))
-# GPvals = newGP.rGP(np.concatenate((locs,gridLoc)))
+res = 50
+gridLoc = makeGrid([0,1], [0,1], res)
 
 
-# gridInt = lam*expit(GPvals[locs.shape[0]:,:])
+locs = PPP.randomHomog(lam).loc
+
+newGP = GP(zeroMean,expCov(tau,rho))
+GPvals = newGP.rGP(np.concatenate((locs,gridLoc)))
 
 
-# locProb  = expit(GPvals[:locs.shape[0],:])
-# index = np.array(np.greater(locProb,random.uniform(size=locProb.shape)))
-# locObs = locs[np.squeeze(index)]
-# locThin = locs[np.logical_not(np.squeeze(index))]
+gridInt = lam*expit(GPvals[locs.shape[0]:,:])
+
+
+locProb  = expit(GPvals[:locs.shape[0],:])
+index = np.array(np.greater(locProb,random.uniform(size=locProb.shape)))
+locObs = locs[np.squeeze(index)]
+locThin = locs[np.logical_not(np.squeeze(index))]
 
 
 
 
-# ### cox process
+### cox process
 
 
-# fig = plt.figure()
-# ax = fig.add_subplot(111)
-# ax.set_aspect('equal')
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
 
-# plt.xlim(0,1)
-# plt.ylim(0,1)
+plt.xlim(0,1)
+plt.ylim(0,1)
 
-# plt.scatter(locObs[:,0],locObs[:,1])
+plt.scatter(locObs[:,0],locObs[:,1])
 
-# plt.show()
+plt.show()
 
-# ### int + obs + thin
+### int + obs + thin
 
-# imGP = np.transpose(gridInt.reshape(res,res))
+imGP = np.transpose(gridInt.reshape(res,res))
 
-# x = np.linspace(0,1, res+1) 
-# y = np.linspace(0,1, res+1) 
-# X, Y = np.meshgrid(x,y) 
+x = np.linspace(0,1, res+1) 
+y = np.linspace(0,1, res+1) 
+X, Y = np.meshgrid(x,y) 
 
-# fig = plt.figure()
-# ax = fig.add_subplot(111)
-# ax.set_aspect('equal')
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
 
-# plt.pcolormesh(X,Y,np.array(imGP), cmap='winter')
+plt.pcolormesh(X,Y,np.array(imGP), cmap='winter')
 
-# plt.xlim(0,1)
-# plt.ylim(0,1)
-# plt.colorbar()
+plt.xlim(0,1)
+plt.ylim(0,1)
+plt.colorbar()
 
-# plt.scatter(locObs[:,0],locObs[:,1], color= "black", s=1)
-# plt.scatter(locThin[:,0],locThin[:,1], color= "white", s=1)
+plt.scatter(locObs[:,0],locObs[:,1], color= "black", s=1)
+plt.scatter(locThin[:,0],locThin[:,1], color= "white", s=1)
 
 
-# plt.show()
+plt.show()
 
-# ################################
+################################
 
-# pointpo.loc = locObs
-# pointpo.plot()
+pointpo.loc = locObs
+pointpo.plot()
 
 
 # newGP = GP(zeroMean,gaussianCov(2,0.5))
 # l=0.5
 # newGP = GP(zeroMean,expCov(1,l))
 
-niter= 500
-nInsDelMov = 50
+niter= 5000
+nInsDelMov = 40
 
 import time
 
@@ -168,90 +168,95 @@ total1 = t1-t0
 # plt.show()
 
 
-# def makeGrid(xlim,ylim,res):
-#     grid = np.ndarray((res**2,2))
-#     xlo = xlim[0]
-#     xhi = xlim[1]
-#     xrange = xhi - xlo
-#     ylo = ylim[0]
-#     yhi = ylim[1]
-#     yrange = yhi - ylo
-#     xs = np.arange(xlo, xhi, step=xrange/res) + xrange/res*0.5
-#     ys = np.arange(ylo, yhi, step=yrange/res) + yrange/res*0.5
-#     i=0
-#     for x in xs:
-#         j=0
-#         for y in ys:
-#             grid[i*res+j,:] = [x,y]
-#             j+=1
-#         i+=1
-#     return(grid)
+def makeGrid(xlim,ylim,res):
+    grid = np.ndarray((res**2,2))
+    xlo = xlim[0]
+    xhi = xlim[1]
+    xrange = xhi - xlo
+    ylo = ylim[0]
+    yhi = ylim[1]
+    yrange = yhi - ylo
+    xs = np.arange(xlo, xhi, step=xrange/res) + xrange/res*0.5
+    ys = np.arange(ylo, yhi, step=yrange/res) + yrange/res*0.5
+    i=0
+    for x in xs:
+        j=0
+        for y in ys:
+            grid[i*res+j,:] = [x,y]
+            j+=1
+        i+=1
+    return(grid)
 
 
-# res = 50
-# gridLoc = makeGrid([0,1], [0,1], res)
+res = 50
+gridLoc = makeGrid([0,1], [0,1], res)
 
 
-# def expit(x):
-#     return(np.exp(x)/(1+np.exp(x)))
+def expit(x):
+    return(np.exp(x)/(1+np.exp(x)))
 
 
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
-# resGP = np.empty(shape=(niter-1,res**2,1))
-# # meanGP = np.zeros(shape=(res**2,1))
-# i=0
-# t0 = time.time()
-# while(i < niter-1):
-#     locations = np.loadtxt("locations"+str(i)+".csv", delimiter=",")
-#     values = np.loadtxt("values"+str(i)+".csv", delimiter=",")
-#     # np.savetxt("resGP"+str(i)+".csv",lams[i+1]*expit(newGP.rCondGP(gridLoc,locations,np.transpose([values]))) ,delimiter=",")
-#     newGP = GP(zeroMean,expCov(taus[i+1],rhos[i+1]))
-#     resGP[i] = lams[i+1]*expit(newGP.rCondGP(gridLoc,locations,np.transpose([values])))
-#     # meanGP = ((i+1)*meanGP + lams[i+1]*expit(newGP.rCondGP(gridLoc,locations,np.transpose([values]))))/(i+2)
+resGP = np.empty(shape=(niter-1,res**2,1))
+# meanGP = np.zeros(shape=(res**2,1))
+i=0
+t0 = time.time()
+while(i < niter-1):
+    locations = np.loadtxt("locations"+str(i)+".csv", delimiter=",")
+    values = np.loadtxt("values"+str(i)+".csv", delimiter=",")
+    # np.savetxt("resGP"+str(i)+".csv",lams[i+1]*expit(newGP.rCondGP(gridLoc,locations,np.transpose([values]))) ,delimiter=",")
+    newGP = GP(zeroMean,expCov(taus[i+1],rhos[i+1]))
+    resGP[i] = lams[i+1]*expit(newGP.rCondGP(gridLoc,locations,np.transpose([values])))
+    # meanGP = ((i+1)*meanGP + lams[i+1]*expit(newGP.rCondGP(gridLoc,locations,np.transpose([values]))))/(i+2)
     
-#     # imGP = np.transpose(resGP[i].reshape(res,res))
+    # imGP = np.transpose(resGP[i].reshape(res,res))
     
-#     # x = np.linspace(0,1, res+1) 
-#     # y = np.linspace(0,1, res+1) 
-#     # X, Y = np.meshgrid(x,y) 
+    # x = np.linspace(0,1, res+1) 
+    # y = np.linspace(0,1, res+1) 
+    # X, Y = np.meshgrid(x,y) 
     
-#     # fig = plt.figure()
-#     # ax = fig.add_subplot(111)
-#     # ax.set_aspect('equal')
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+    # ax.set_aspect('equal')
     
-#     # plt.pcolormesh(X,Y,imGP, cmap='cool')
+    # plt.pcolormesh(X,Y,imGP, cmap='cool')
     
-#     # plt.xlim(0,1)
-#     # plt.ylim(0,1)
-#     # plt.colorbar()
-#     # plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
+    # plt.xlim(0,1)
+    # plt.ylim(0,1)
+    # plt.colorbar()
+    # plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
     
-#     # plt.show()
+    # plt.show()
     
-#     print(i)
-#     i+=1
-# t1 = time.time()
+    print(i)
+    i+=1
+t1 = time.time()
 
-# total2 = t1-t0
+total2 = t1-t0
 
 # ### do some plot
 
 
+# obs + thin last iteration
+
+nObs = pointpo.loc.shape[0]
 
 
-# # fig = plt.figure()
-# # ax = fig.add_subplot(111)
-# # ax.set_aspect('equal')
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
 
-# # plt.plot(locations.obsLoc()[:,0],locations.obsLoc()[:,1], 'o')
-# # plt.plot(locations.thinLoc()[:,0],locations.thinLoc()[:,1], 'o')
-# # plt.xlim(0,1)
-# # plt.ylim(0,1)
+plt.plot(locations[:nObs,0],locations[:nObs,1], 'o')
+plt.plot(locations[nObs:,0],locations[nObs:,1], 'o')
+plt.xlim(0,1)
+plt.ylim(0,1)
 
-# # plt.show()
+plt.show()
 
-# nObs = pointpo.loc.shape[0]
+
+
+### points dancing arround
 
 # i=0
 
@@ -275,37 +280,43 @@ total1 = t1-t0
 
 
 
-# plt.plot(lams)
-# plt.plot(rhos)
-# plt.plot(taus)
-# np.mean(lams)
-# np.mean(rhos)
-# np.mean(taus)
+plt.plot(lams)
+plt.plot(rhos)
+plt.plot(taus)
+plt.plot(lams[4000:])
+plt.plot(rhos[4000:])
+plt.plot(taus[4000:])
+# plt.plot(lams[::5])
+# plt.plot(rhos[::5])
+# plt.plot(taus[::5])
+np.mean(lams)
+np.mean(rhos)
+np.mean(taus)
 
 
 
-# meanGP = np.mean(resGP, axis=0, dtype=np.float32)
+meanGP = np.mean(resGP, axis=0, dtype=np.float32)
 
-# ### plot mean intensity
+### plot mean intensity
 
-# imGP = np.transpose(meanGP.reshape(res,res))
+imGP = np.transpose(meanGP.reshape(res,res))
     
-# x = np.linspace(0,1, res+1) 
-# y = np.linspace(0,1, res+1) 
-# X, Y = np.meshgrid(x,y) 
+x = np.linspace(0,1, res+1) 
+y = np.linspace(0,1, res+1) 
+X, Y = np.meshgrid(x,y) 
     
-# fig = plt.figure()
-# ax = fig.add_subplot(111)
-# ax.set_aspect('equal')
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
     
-# plt.pcolormesh(X,Y,imGP, cmap='cool')
+plt.pcolormesh(X,Y,imGP, cmap='cool')
     
-# plt.xlim(0,1)
-# plt.ylim(0,1)
-# plt.colorbar()
-# plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
+plt.xlim(0,1)
+plt.ylim(0,1)
+plt.colorbar()
+plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
     
-# plt.show()
+plt.show()
 
 
 # meanGP = np.mean(resGP[:2000], axis=0, dtype=np.float32)
