@@ -129,7 +129,7 @@ pointpo.plot()
 # l=0.5
 # newGP = GP(zeroMean,expCov(1,l))
 
-niter= 5000
+niter= 500
 nInsDelMov = 40
 
 import time
