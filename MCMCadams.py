@@ -20,6 +20,8 @@ import scipy as sp
 from dmatrix import bdmatrix
 from dmatrix import dsymatrix
 
+from scipy.stats import matrix_normal
+
 # Source: (Adams, 2009) Tractable Nonparametric Bayesian Inference in Poisson Processes
 # with Gaussian Process Intensities
 
@@ -845,37 +847,39 @@ def precisionSampler(a_tau,b_tau,tau_prev,values,Sigma):
 ###
 
 
-def MCMCadams(size,lam_init,rho_init,tau_init,thisPPP,nInsDelMov,kappa,delta,L,mu,sigma2,p,a,b,a_tau,b_tau):
+def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu,sigma2,p,a,b,a_tau,b_tau):
     
     
     ### initialize GP
-    thisGP = GP(zeroMean,expCov(tau_init,rho_init))
+    thisGP = GP(zeroMean,expCov(1,rho_init))
     
     ### location container initialization
-    totLocInit = np.concatenate((thisPPP.loc,PPP.randomHomog(lam=lam_init).loc),0)
-    nObs = thisPPP.loc.shape[0]
+    totLocInit = np.concatenate((thismtPP.locs,PPP.randomHomog(lam=lam_init).loc),0)
+    nObs = thismtPP.nObs
     
     locations = bdmatrix(100*lam_init,totLocInit,nObs,"locations") # initial size is a bit of black magic
     
     ### cov matrix initialization
     
-    Sigma = dsymatrix(100*lam_init,thisGP.covMatrix(totLocInit),nObs)
+    Rmat = dsymatrix(100*lam_init,thisGP.covMatrix(totLocInit),nObs)
     
     ### GP values container initialization
     
-    values = bdmatrix(100*lam_init,rMultNorm(0,Sigma.sliceMatrix()),nObs,"values")
+    values = bdmatrix(100*lam_init,matrix_normal.rvs(rowcov=Rmat.sliceMatrix(),colcov=np.linalg.inv(T_init)),nObs,"values")
     
     
     ### parameters containers
     lams = np.empty(shape=(size))
     rhos = np.empty(shape=(size))
-    taus = np.empty(shape=(size))
+    
+    K = thismtPP.K
+    Ts = np.empty(shape=(size,K,K))
     
     
     ### 
     lams[0] = lam_init
     rhos[0] = rho_init
-    taus[0] = tau_init
+    Ts[0] = T_init
     
     i=1
     while i < size:
