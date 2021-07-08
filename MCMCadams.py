@@ -9,11 +9,12 @@ import numpy as np
 from numpy import random
 from scipy.stats import beta
 from rGP import GP
-from rGP import gaussianCov
+#from rGP import gaussianCov
 from rGP import expCov
 from rGP import rMultNorm
 #from rGP import indCov
 from rppp import PPP
+from rppp import mtPPP
 from scipy.stats import gamma
 import matplotlib.pyplot as plt
 import scipy as sp
@@ -34,24 +35,29 @@ from scipy.stats import matrix_normal
 # along with the its conditionnal GP value
 ###
 
-def insProp(lam, thisGP, locations, values, Sigma):
+def insProp(lam, thisGP, locations, values, Rmat, Tmat):
     
     newLoc =  random.uniform(size=(2))
     
     
-    ## propose new value from GP(.|totVal)
+    ## propose new value from MGP(.|totVal)
     
     s_11 = thisGP.cov([newLoc],[newLoc])
     S_21 = thisGP.cov(locations.totLoc(),[newLoc])
     
-    S_12S_22m1 = np.dot(np.transpose(S_21),Sigma.inver)
+    S_12S_22m1 = np.dot(np.transpose(S_21),Rmat.inver)
     
     mu = np.dot(S_12S_22m1,values.totLoc())
-    sig = s_11 - np.dot(S_12S_22m1,S_21)
+    spatSig = s_11 - np.dot(S_12S_22m1,S_21)
     
-    newVal = np.sqrt(sig)*np.random.normal()+mu
+    A = np.linalg.cholesky(Tmat)
     
-    acc_ins = (1-b(locations.nThin+1))/b(locations.nThin)*lam/(locations.nThin+1)/(1+np.exp(newVal))
+    K = Tmat.shape[0]
+    Am = sp.linalg.solve_triangular(A,np.identity(K),lower=True)
+    
+    newVal = np.sqrt(spatSig)*np.random.normal(size=(1,K))@Am+mu
+    
+    acc_ins = (1-b(locations.nThin+1))/b(locations.nThin)*lam/(locations.nThin+1)/(1+np.sum(np.exp(newVal)))
         
     U = random.uniform(size=1)
         
@@ -62,7 +68,7 @@ def insProp(lam, thisGP, locations, values, Sigma):
         
 
         
-        Sigma.concat(S_21,s_11)
+        Rmat.concat(S_21,s_11)
     
     
     
@@ -98,7 +104,7 @@ def delProp(lam, locations, values, Sigma):
     
     oldVal = values.getThinLoc(delInd)
     
-    acc_del = b(locations.nThin-1)/(1-b(locations.nThin))*locations.nThin/lam*(1+np.exp(oldVal))
+    acc_del = b(locations.nThin-1)/(1-b(locations.nThin))*locations.nThin/lam*(1+np.sum(np.exp(oldVal)))
                                                   
     U = random.uniform(size=1)
         
@@ -182,7 +188,7 @@ def alpha(nthin):
 # inserts or deletes a thinned event along with the GP value
 ###
 
-def nthinSampler(lam, thisGP, locations, values, Sigma):
+def nthinSampler(lam, thisGP, locations, values, Rmat, Tmat):
     
 
     
@@ -191,7 +197,7 @@ def nthinSampler(lam, thisGP, locations, values, Sigma):
     if B:
 
         
-        insProp(lam, thisGP, locations, values, Sigma)
+        insProp(lam, thisGP, locations, values, Rmat, Tmat)
         
         # acc_ins = (1-b(nthin+1))/b(nthin)*lam/(nthin+1)/(1+np.exp(newVal))
         
@@ -203,7 +209,7 @@ def nthinSampler(lam, thisGP, locations, values, Sigma):
         #     Sigma=newSigma
         #     Sigma_inv=newSigma_inv
     else:
-        delProp(lam, locations, values, Sigma)
+        delProp(lam, locations, values, Rmat)
         
         # acc_del = b(nthin-1)/(1-b(nthin))*nthin/lam*(1+np.exp(oldVal))
                                                   
@@ -334,7 +340,7 @@ def kernelBeta(xNew,xOld,kappa):
 # Jitters one of the point process location and resamples the GP at said location
 ###
 
-def locationMove(kappa, thisGP, locations, values, Sigma):
+def locationMove(kappa, thisGP, locations, values, Rmat, Tmat):
 
     
     moveInd = random.choice(np.array(range(0,locations.nThin))) ## choose random point to move
@@ -344,21 +350,26 @@ def locationMove(kappa, thisGP, locations, values, Sigma):
     newLoc = np.array([jitterBeta(moveLoc[0],kappa),jitterBeta(moveLoc[1],kappa)])
 
 
-    ## propose new value from GP(.|totVal)
+    ## propose new value from MGP(.|totVal)
     
     s_11 = thisGP.cov([newLoc],[newLoc])
     S_21 = thisGP.cov(locations.totLoc(),[newLoc])
     
-    S_12S_22m1 = np.dot(np.transpose(S_21),Sigma.inver)
+    S_12S_22m1 = np.dot(np.transpose(S_21),Rmat.inver)
     
     mu = np.dot(S_12S_22m1,values.totLoc())
-    sig = s_11 - np.dot(S_12S_22m1,S_21)
+    spatSig = s_11 - np.dot(S_12S_22m1,S_21)
     
-    newVal = np.sqrt(sig)*np.random.normal()+mu
+    A = np.linalg.cholesky(Tmat)
+    
+    K = Tmat.shape[0]
+    Am = sp.linalg.solve_triangular(A,np.identity(K),lower=True)
+    
+    newVal = np.sqrt(spatSig)*np.random.normal(size=(1,K))@Am+mu
     
     
     ## accept-reject
-    acc_loc = kernelBeta(moveLoc, newLoc, kappa)/(1+np.exp(newVal))*(1+np.exp(values.getThinLoc(moveInd)))/kernelBeta(newLoc, moveLoc, kappa) 
+    acc_loc = kernelBeta(moveLoc, newLoc, kappa)/(1+np.sum(np.exp(newVal)))*(1+np.sum(np.exp(values.getThinLoc(moveInd))))/kernelBeta(newLoc, moveLoc, kappa) 
         
     U = random.uniform(size=1)
         
@@ -369,7 +380,7 @@ def locationMove(kappa, thisGP, locations, values, Sigma):
         
         S_21[locations.nObs+moveInd,:] = s_11
         
-        Sigma.change(S_21,moveInd)
+        Rmat.change(S_21,moveInd)
 
 
 # ### TESTER locationMove
@@ -398,15 +409,15 @@ def locationMove(kappa, thisGP, locations, values, Sigma):
 # Combines a mixture of birth-death-move type of samplers
 ###
 
-def birthDeathMove(lam, kappa, thisGP, locations, values, Sigma):
+def birthDeathMove(lam, kappa, thisGP, locations, values, Rmat, Tmat):
     
     
     A = random.binomial(1,alpha(locations.nThin),1)
     
     if A:
-        nthinSampler(lam, thisGP, locations, values, Sigma)
+        nthinSampler(lam, thisGP, locations, values, Rmat, Tmat)
     else:
-        locationMove(kappa, thisGP, locations, values, Sigma)
+        locationMove(kappa, thisGP, locations, values, Rmat, Tmat)
     
 
 
@@ -435,27 +446,27 @@ def birthDeathMove(lam, kappa, thisGP, locations, values, Sigma):
 # loops through thinned points and proposes new locations and GP values
 ###
 
-def locationSampler(kappa, thisGP, locThin, valThin, locObs, valObs):
-    
-    i=0
-    for thisLoc in locThin:
-        thisLoc = np.array([thisLoc])
-        newLoc = np.array([[jitterBeta(thisLoc[:,0],kappa),jitterBeta(thisLoc[:,1],kappa)]])
-        
-        locTot = np.concatenate((locThin, locObs))
-        valTot = np.concatenate((valThin, valObs))
-        newVal = thisGP.rCondGP(newLoc, locTot, valTot)
-        
-        acc_loc = kernelBeta(thisLoc, newLoc, kappa)/(1+np.exp(newVal))*(1+np.exp(valThin[i]))/kernelBeta(newLoc, thisLoc, kappa) 
-        
-        U = random.uniform(size=1)
-        
-        if U < acc_loc:
-            locThin[i] = newLoc
-            valThin[i] = newVal
-        
-        i+=1
-    return(locThin, valThin)
+#def locationSampler(kappa, thisGP, locThin, valThin, locObs, valObs):
+#    
+#    i=0
+#    for thisLoc in locThin:
+#        thisLoc = np.array([thisLoc])
+#        newLoc = np.array([[jitterBeta(thisLoc[:,0],kappa),jitterBeta(thisLoc[:,1],kappa)]])
+#        
+#        locTot = np.concatenate((locThin, locObs))
+#        valTot = np.concatenate((valThin, valObs))
+#        newVal = thisGP.rCondGP(newLoc, locTot, valTot)
+#        
+#        acc_loc = kernelBeta(thisLoc, newLoc, kappa)/(1+np.exp(newVal))*(1+np.exp(valThin[i]))/kernelBeta(newLoc, thisLoc, kappa) 
+#        
+#        U = random.uniform(size=1)
+#        
+#        if U < acc_loc:
+#            locThin[i] = newLoc
+#            valThin[i] = newVal
+#        
+#        i+=1
+#    return(locThin, valThin)
 
 # ### TESTER locationSampler
 # kappa=10
@@ -886,7 +897,7 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
         
         j=0
         while j < nInsDelMov:
-            birthDeathMove(lams[i-1],kappa,thisGP,locations,values,Sigma)
+            birthDeathMove(lams[i-1],kappa,thisGP,locations,values,Rmat,Ts[i-1])
             j+=1
         
 
