@@ -519,24 +519,84 @@ def PHI(X):
 # PHI(np.array([[1.0,2,3],[4,5,6],[7,8,9]]))
 
 
+
+###
+# potential energy in spatially whitened space (AA^T=Rmat) (GP values + range parameter)
+###
+
+def U(whiteVal, A, nObs, Tmat, typeMatrix, rho, a, b):
+    
+    
+    AH = A@whiteVal
+    
+    
+    K = whiteVal.shape[1]
+    One_K = np.ones(shape=(K,1))
+    
+    
+    
+    return(1/2*np.trace(Tmat@np.transpose(whiteVal)@whiteVal)
+           -np.sum(AH[:nObs]*np.transpose(typeMatrix))
+           +np.sum(np.log(1+np.exp(AH)@One_K))
+           -(a-1)*np.log(rho) + b*rho)
+
+
+# ### TESTER: U
+
+# rho=2
+
+# thisGP = GP(zeroMean,expCov(1,rho))
+
+# pp1 = PPP.randomHomog(5)
+# pp2 = PPP.randomHomog(5)
+# pp3 = PPP.randomHomog(5)
+
+
+# pps = np.array([pp1,pp2,pp3])
+
+# mtpp = mtPPP(pps)
+
+# ppThin = PPP.randomHomog(5)
+
+# Rmat = thisGP.covMatrix(np.concatenate((mtpp.locs,ppThin.loc)))
+
+# K=mtpp.K
+# Tmat = np.identity(K)
+
+# nObs = mtpp.nObs
+# typeMatrix = mtpp.typeMatrix
+
+# val = matrix_normal.rvs(rowcov=Rmat,colcov=np.linalg.inv(Tmat))
+
+# A = np.linalg.cholesky(Rmat)
+# Ainv = sp.linalg.solve_triangular(A,np.identity(A.shape[0]),lower=True)
+
+# whiteVal = Ainv@val
+
+# a1=2
+# b1=2
+
+# U(whiteVal, A, nObs, Tmat, typeMatrix, rho, a1, b1)
+
+
 ###
 # potential energy in whitened space (AA^T=Sigma) 
 ###
 
-def U(whiteVal, A, nObs):
+# def U(whiteVal, A, nObs, typeMatrix):
     
-    return(np.sum(np.log(1+np.exp(np.dot(-A[:nObs,:],whiteVal)))) + 
-           np.sum(np.log(1+np.exp(np.dot(A[nObs:,:],whiteVal)))) +
-           1/2*np.sum(whiteVal**2))
+#     return(np.sum(np.log(1+np.exp(np.dot(-A[:nObs,:],whiteVal)))) + 
+#            np.sum(np.log(1+np.exp(np.dot(A[nObs:,:],whiteVal)))) +
+#            1/2*np.sum(whiteVal**2))
 
 
 ###
 # potential energy in whitened space (AA^T=Sigma) +  rho
 ###
 
-def Urange(whiteVal, A, nObs, rho, a, b):
+# def Urange(whiteVal, A, nObs, rho, a, b):
     
-    return(U(whiteVal, A, nObs) - (a-1)*np.log(rho) +b*rho)
+#     return(U(whiteVal, A, nObs) - (a-1)*np.log(rho) +b*rho)
 
 
     
@@ -557,15 +617,76 @@ def Urange(whiteVal, A, nObs, rho, a, b):
 
 # U(whiteVal,A,nthin)
 
+
+###
+# returns (1) derivative of potential energy wrt spatially whitened function values H (2) wrt to range parameter rho
+###
+
+def Uprime(whiteVal, A, Ainv, nObs, Tmat, typeMatrix, Rmat, rho, a, b):
+    
+    expAH = np.exp(A@whiteVal)
+    
+    K = whiteVal.shape[1]
+    One_K = np.ones(shape=(K,1))
+    
+    OnepExpAHOne_Km1 = 1/(1+expAH@One_K)
+    
+    ntot = A.shape[0]
+    name = np.zeros(shape=(ntot,ntot))
+    name[:nObs] = np.transpose(whiteVal@typeMatrix)
+    
+    return(whiteVal@Tmat + np.transpose(A*OnepExpAHOne_Km1)@expAH-np.transpose(typeMatrix@A[:nObs]),
+           np.sum((expAH@np.transpose(whiteVal)*OnepExpAHOne_Km1 - name)*(A@PHI(Ainv@(Rmat*(np.log(Rmat)/rho))@np.transpose(Ainv))))-(a-1)/rho+b)
+           
+
+### TESTER: Uprime
+
+rho=2
+
+thisGP = GP(zeroMean,expCov(1,rho))
+
+pp1 = PPP.randomHomog(5)
+pp2 = PPP.randomHomog(5)
+pp3 = PPP.randomHomog(5)
+
+
+pps = np.array([pp1,pp2,pp3])
+
+mtpp = mtPPP(pps)
+
+ppThin = PPP.randomHomog(5)
+
+Rmat = thisGP.covMatrix(np.concatenate((mtpp.locs,ppThin.loc)))
+
+K=mtpp.K
+Tmat = np.identity(K)
+
+nObs = mtpp.nObs
+typeMatrix = mtpp.typeMatrix
+
+val = matrix_normal.rvs(rowcov=Rmat,colcov=np.linalg.inv(Tmat))
+
+A = np.linalg.cholesky(Rmat)
+Ainv = sp.linalg.solve_triangular(A,np.identity(A.shape[0]),lower=True)
+
+whiteVal = Ainv@val
+
+a1=2
+b1=2
+
+Uprime(whiteVal, A, Ainv, nObs, Tmat, typeMatrix, Rmat, rho, a1, b1)
+
+
+
 ###
 # derivative of potential energy in whitened space (AA^T=Sigma)
 ###
 
-def U_prime(whiteVal, A, nObs):
+# def U_prime(whiteVal, A, nObs):
 
-    return(np.transpose(np.dot(np.transpose(expit(np.dot(A[nObs:,:],whiteVal))),A[nObs:,:]))
-           -np.transpose(np.dot(np.transpose(expit(np.dot(-A[:nObs,:],whiteVal))),A[:nObs,:]))
-           +whiteVal)
+#     return(np.transpose(np.dot(np.transpose(expit(np.dot(A[nObs:,:],whiteVal))),A[nObs:,:]))
+#            -np.transpose(np.dot(np.transpose(expit(np.dot(-A[:nObs,:],whiteVal))),A[:nObs,:]))
+#            +whiteVal)
 
 
 
@@ -573,20 +694,20 @@ def U_prime(whiteVal, A, nObs):
 # derivative of potential energy in whitened space (AA^T=Sigma) + rho
 ###
 
-def Urange_prime(whiteVal, A, Ainv, Sigma, nObs, rho, tau, a ,b):
+# def Urange_prime(whiteVal, A, Ainv, Sigma, nObs, rho, tau, a ,b):
     
-    ntot = whiteVal.shape[0]
-    vec = np.zeros(shape=(ntot+1,1))
+#     ntot = whiteVal.shape[0]
+#     vec = np.zeros(shape=(ntot+1,1))
     
     
-    vec[0:ntot,:] = U_prime(whiteVal,A,nObs)
+#     vec[0:ntot,:] = U_prime(whiteVal,A,nObs)
     
-    H = expit(-A@whiteVal)
-    H[nObs:] = H[nObs:]-1
+#     H = expit(-A@whiteVal)
+#     H[nObs:] = H[nObs:]-1
     
-    vec[ntot,:] = -(a-1)/rho + b - np.sum(H@np.transpose(whiteVal)*A@PHI(Ainv@(Sigma*np.log(tau*Sigma)/rho)@np.transpose(Ainv)))
+#     vec[ntot,:] = -(a-1)/rho + b - np.sum(H@np.transpose(whiteVal)*A@PHI(Ainv@(Sigma*np.log(tau*Sigma)/rho)@np.transpose(Ainv)))
 
-    return(vec)
+#     return(vec)
 
 
 
@@ -607,40 +728,44 @@ def Urange_prime(whiteVal, A, Ainv, Sigma, nObs, rho, tau, a ,b):
 
 # U_prime(whiteVal,A,nthin)
 
+
+
+
+
 ###
 # sampling the GP values at the thinned and observed events
 ###
 
-def functionSampler(delta,L,values,Sigma):
+# def functionSampler(delta,L,values,Sigma):
     
-    A = np.linalg.cholesky(Sigma.sliceMatrix())
+#     A = np.linalg.cholesky(Sigma.sliceMatrix())
     
-    nObs = values.nObs
-    ntot = values.nThin + nObs
-    whiteVal = np.dot(sp.linalg.solve_triangular(A,np.identity(ntot),lower=True),values.totLoc())
+#     nObs = values.nObs
+#     ntot = values.nThin + nObs
+#     whiteVal = np.dot(sp.linalg.solve_triangular(A,np.identity(ntot),lower=True),values.totLoc())
     
-    kinVal = random.normal(size=(ntot,1))
+#     kinVal = random.normal(size=(ntot,1))
     
-    kinVal_prime = kinVal - delta/2*U_prime(whiteVal, A, nObs)
-    whiteVal_prime = whiteVal + delta*kinVal_prime
+#     kinVal_prime = kinVal - delta/2*U_prime(whiteVal, A, nObs)
+#     whiteVal_prime = whiteVal + delta*kinVal_prime
     
-    l=0
-    while(l<L):
-        kinVal_prime = kinVal_prime - delta*U_prime(whiteVal_prime,A,nObs)
-        whiteVal_prime = whiteVal_prime + delta*kinVal_prime
+#     l=0
+#     while(l<L):
+#         kinVal_prime = kinVal_prime - delta*U_prime(whiteVal_prime,A,nObs)
+#         whiteVal_prime = whiteVal_prime + delta*kinVal_prime
         
-        l += 1
+#         l += 1
         
-    kinVal_prime = kinVal_prime - delta/2*U_prime(whiteVal_prime,A,nObs)
+#     kinVal_prime = kinVal_prime - delta/2*U_prime(whiteVal_prime,A,nObs)
     
-    a_func = np.exp(-U(whiteVal_prime,A,nObs)+U(whiteVal,A,nObs)
-                    - 1/2*np.sum(kinVal_prime**2)
-                    + 1/2*np.sum(kinVal**2))
+#     a_func = np.exp(-U(whiteVal_prime,A,nObs)+U(whiteVal,A,nObs)
+#                     - 1/2*np.sum(kinVal_prime**2)
+#                     + 1/2*np.sum(kinVal**2))
     
-    Uf = random.uniform(size=1)
+#     Uf = random.uniform(size=1)
         
-    if Uf < a_func:
-        values.newVals(np.dot(A,whiteVal_prime))
+#     if Uf < a_func:
+#         values.newVals(np.dot(A,whiteVal_prime))
         
 # ### TESTER: functionSampler
 # newGP = GP(zeroMean,gaussianCov(1,1))
@@ -692,11 +817,11 @@ def functionSampler(delta,L,values,Sigma):
 # sampling the GP values at the thinned and observed events + the range parameter rho
 ###
 
-def functionRangeSampler(delta,L,values,Sigma,rho,tau,a,b):
+def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,a,b):
     
     
-    Sigma_temp = Sigma.sliceMatrix()
-    A = np.linalg.cholesky(Sigma_temp)
+    R_temp = Rmat.sliceMatrix()
+    A = np.linalg.cholesky(R_temp)
     
     nObs = values.nObs
     ntot = values.nThin + nObs
@@ -704,8 +829,12 @@ def functionRangeSampler(delta,L,values,Sigma,rho,tau,a,b):
     Ainv = sp.linalg.solve_triangular(A,np.identity(ntot),lower=True)
     whiteVal = np.dot(Ainv,values.totLoc())
     
-    kinVal = random.normal(size=(ntot+1,1))
+    K = Tmat.shape[0]
+    H_mom_init = random.normal(size=(ntot,K))
+    rho_mom_init = random.normal()
     
+    
+    ### leapfrog algorithm
     kinVal_prime = kinVal - delta/2*Urange_prime(whiteVal, A, Ainv, Sigma_temp, nObs, rho, tau, a ,b)
     posVal_prime = np.concatenate((whiteVal,[[rho]])) + delta*kinVal_prime
     if posVal_prime[ntot] < 0:
