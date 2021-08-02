@@ -340,7 +340,7 @@ plt.scatter(whiteoak[:,0],whiteoak[:,1],label="whiteoak")
 plt.legend(bbox_to_anchor=(1, 0.8))
 
 plt.show()
-
+fig.savefig("spatstatData.pdf", bbox_inches='tight')
         
         
         

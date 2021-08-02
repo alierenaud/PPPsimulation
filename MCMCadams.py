@@ -22,6 +22,7 @@ from dmatrix import bdmatrix
 from dmatrix import dsymatrix
 
 from scipy.stats import matrix_normal
+from scipy.stats import wishart
 
 # Source: (Adams, 2009) Tractable Nonparametric Bayesian Inference in Poisson Processes
 # with Gaussian Process Intensities
@@ -641,40 +642,40 @@ def Uprime(whiteVal, A, Ainv, nObs, Tmat, typeMatrix, Rmat, rho, a, b):
 
 ### TESTER: Uprime
 
-rho=2
+# rho=2
 
-thisGP = GP(zeroMean,expCov(1,rho))
+# thisGP = GP(zeroMean,expCov(1,rho))
 
-pp1 = PPP.randomHomog(5)
-pp2 = PPP.randomHomog(5)
-pp3 = PPP.randomHomog(5)
+# pp1 = PPP.randomHomog(5)
+# pp2 = PPP.randomHomog(5)
+# pp3 = PPP.randomHomog(5)
 
 
-pps = np.array([pp1,pp2,pp3])
+# pps = np.array([pp1,pp2,pp3])
 
-mtpp = mtPPP(pps)
+# mtpp = mtPPP(pps)
 
-ppThin = PPP.randomHomog(5)
+# ppThin = PPP.randomHomog(5)
 
-Rmat = thisGP.covMatrix(np.concatenate((mtpp.locs,ppThin.loc)))
+# Rmat = thisGP.covMatrix(np.concatenate((mtpp.locs,ppThin.loc)))
 
-K=mtpp.K
-Tmat = np.identity(K)
+# K=mtpp.K
+# Tmat = np.identity(K)
 
-nObs = mtpp.nObs
-typeMatrix = mtpp.typeMatrix
+# nObs = mtpp.nObs
+# typeMatrix = mtpp.typeMatrix
 
-val = matrix_normal.rvs(rowcov=Rmat,colcov=np.linalg.inv(Tmat))
+# val = matrix_normal.rvs(rowcov=Rmat,colcov=np.linalg.inv(Tmat))
 
-A = np.linalg.cholesky(Rmat)
-Ainv = sp.linalg.solve_triangular(A,np.identity(A.shape[0]),lower=True)
+# A = np.linalg.cholesky(Rmat)
+# Ainv = sp.linalg.solve_triangular(A,np.identity(A.shape[0]),lower=True)
 
-whiteVal = Ainv@val
+# whiteVal = Ainv@val
 
-a1=2
-b1=2
+# a1=2
+# b1=2
 
-Uprime(whiteVal, A, Ainv, nObs, Tmat, typeMatrix, Rmat, rho, a1, b1)
+# Uprime(whiteVal, A, Ainv, nObs, Tmat, typeMatrix, Rmat, rho, a1, b1)
 
 
 
@@ -817,8 +818,11 @@ Uprime(whiteVal, A, Ainv, nObs, Tmat, typeMatrix, Rmat, rho, a1, b1)
 # sampling the GP values at the thinned and observed events + the range parameter rho
 ###
 
-def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,a,b):
+def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,typeMatrix,a,b):
     
+    
+    
+
     
     R_temp = Rmat.sliceMatrix()
     A = np.linalg.cholesky(R_temp)
@@ -831,54 +835,67 @@ def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,a,b):
     
     K = Tmat.shape[0]
     H_mom_init = random.normal(size=(ntot,K))
-    rho_mom_init = random.normal()
+    rho_mom_init = random.normal(scale=0.5)
     
     
     ### leapfrog algorithm
-    kinVal_prime = kinVal - delta/2*Urange_prime(whiteVal, A, Ainv, Sigma_temp, nObs, rho, tau, a ,b)
-    posVal_prime = np.concatenate((whiteVal,[[rho]])) + delta*kinVal_prime
-    if posVal_prime[ntot] < 0:
-            posVal_prime[ntot] *= -1
-            kinVal_prime[ntot] *= -1
+    Uprime_H, Uprime_rho = Uprime(whiteVal,A,Ainv,nObs,Tmat,typeMatrix,R_temp,rho,a,b)
+    
+    H_mom = H_mom_init - delta/2*Uprime_H
+    rho_mom = rho_mom_init - delta/2*Uprime_rho
+    
+    H_pos = whiteVal + delta*H_mom
+    rho_pos = rho + delta*rho_mom
+    if rho_pos < 0:
+            rho_pos *= -1
+            rho_mom *= -1
     
     rho_prev = rho
     
     l=0
     while(l<L):
-        rho_temp = posVal_prime[ntot,:]
+        rho_temp = rho_pos
         
-        Sigma_temp = (Sigma_temp*tau)**(rho_temp/rho_prev)/tau
-        A = np.linalg.cholesky(Sigma_temp)
-        Ainv = sp.linalg.solve_triangular(A,np.identity(ntot),lower=True)
+        R_temp = R_temp**(rho_temp/rho_prev)
+        A_temp = np.linalg.cholesky(R_temp)
+        Ainv_temp = sp.linalg.solve_triangular(A_temp,np.identity(ntot),lower=True)
         
-        kinVal_prime = kinVal_prime - delta*Urange_prime(posVal_prime[0:ntot,:],A,Ainv,Sigma_temp, nObs, rho_temp, tau, a ,b)
-        posVal_prime = posVal_prime + delta*kinVal_prime
-        if posVal_prime[ntot] < 0:
-            posVal_prime[ntot] *= -1
-            kinVal_prime[ntot] *= -1
+        Uprime_H, Uprime_rho = Uprime(H_pos,A_temp,Ainv_temp,nObs,Tmat,typeMatrix,R_temp,rho_pos,a,b)
+    
+        H_mom = H_mom - delta/2*Uprime_H
+        rho_mom = rho_mom - delta/2*Uprime_rho
+    
+        H_pos = H_pos + delta*H_mom
+        rho_pos = rho_pos + delta*rho_mom
+        if rho_pos < 0:
+            rho_pos *= -1
+            rho_mom *= -1
         
         rho_prev = rho_temp
-        rho_temp = posVal_prime[ntot]
         
         l += 1
         
-    Sigma_temp = (Sigma_temp*tau)**(rho_temp/rho_prev)/tau
-    A = np.linalg.cholesky(Sigma_temp)
-    Ainv = sp.linalg.solve_triangular(A,np.identity(ntot),lower=True)    
+    R_temp = R_temp**(rho_pos/rho_prev)
+    A_temp = np.linalg.cholesky(R_temp)
+    Ainv_temp = sp.linalg.solve_triangular(A_temp,np.identity(ntot),lower=True)    
         
-    kinVal_prime = kinVal_prime - delta/2*Urange_prime(posVal_prime[0:ntot,:],A,Ainv,Sigma_temp, nObs, rho_temp, tau, a ,b)
+    Uprime_H, Uprime_rho = Uprime(H_pos,A_temp,Ainv_temp,nObs,Tmat,typeMatrix,R_temp,rho_pos,a,b)
     
-    a_func = np.exp(-Urange(posVal_prime[0:ntot,:], A, nObs, posVal_prime[ntot,:], a, b)
-                    +Urange(whiteVal, A, nObs, rho, a, b)
-                    - 1/2*np.sum(kinVal_prime**2)
-                    + 1/2*np.sum(kinVal**2))
+    H_mom = H_mom - delta/2*Uprime_H
+    rho_mom = rho_mom - delta/2*Uprime_rho
+
+    
+    a_func = np.exp(-U(H_pos, A_temp, nObs, Tmat, typeMatrix, rho_pos, a, b)
+                    +U(whiteVal, A, nObs, Tmat, typeMatrix, rho, a, b)
+                    - 1/2*np.sum(H_mom**2) - 1/2*rho_mom**2
+                    + 1/2*np.sum(H_mom_init**2) + 1/2*rho_mom_init**2)
     
     Uf = random.uniform(size=1)
         
     if Uf < a_func:
-        values.newVals(np.dot(A,posVal_prime[0:ntot]))
-        rho = posVal_prime[ntot]
-        Sigma.reinit(Sigma_temp)
+        values.newVals(np.dot(A_temp,H_pos))
+        rho = rho_pos
+        Rmat.reinit(R_temp)
     
     return rho
 
@@ -968,16 +985,27 @@ def intensitySampler(mu,sigma2,ntot):
 # precision tau sampler
 ###
 
-def precisionSampler(a_tau,b_tau,tau_prev,values,Sigma):
-    ntot = values.nThin + values.nObs
-    alpha=a_tau + ntot/2
-    beta=b_tau + np.transpose(values.totLoc())@Sigma.inver@values.totLoc()/2/tau_prev
-    tau = gamma.rvs(alpha, scale=1/beta)
+# def precisionSampler(a_tau,b_tau,tau_prev,values,Sigma):
+#     ntot = values.nThin + values.nObs
+#     alpha=a_tau + ntot/2
+#     beta=b_tau + np.transpose(values.totLoc())@Sigma.inver@values.totLoc()/2/tau_prev
+#     tau = gamma.rvs(alpha, scale=1/beta)
     
-    Sigma.rescale(tau_prev/tau)
-    return(tau)
+#     Sigma.rescale(tau_prev/tau)
+#     return(tau)
 
+###
+# type precision T sampler
+###
 
+def typePrecisionSampler(n,Vm1,values,Rmat):
+    ntot = values.nThin + values.nObs
+    n_post=n + ntot
+    V_post=Vm1 + np.transpose(values.totLoc())@Rmat.inver@values.totLoc()
+    Tmat= wishart.rvs(n_post, np.linalg.inv(V_post))
+    
+    # Sigma.rescale(tau_prev/tau)
+    return(Tmat)
 
 
 
@@ -987,8 +1015,10 @@ def precisionSampler(a_tau,b_tau,tau_prev,values,Sigma):
 ###
 
 
-def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu,sigma2,p,a,b,a_tau,b_tau):
+def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu,sigma2,p,a,b,n,V):
     
+    
+    ### independent type prior mean
     
     ### initialize GP
     thisGP = GP(zeroMean,expCov(1,rho_init))
@@ -1014,6 +1044,9 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
     
     K = thismtPP.K
     Ts = np.empty(shape=(size,K,K))
+    
+    ### independent type prior mean
+    Vm1 = np.linalg.inv(V)
     
     
     ### 
@@ -1044,9 +1077,9 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
         
         # functionSampler(delta,L,values,Sigma)
         
-        rhos[i] = functionRangeSampler(delta,L,values,Sigma,rhos[i-1],taus[i-1],a,b)
-        taus[i] = precisionSampler(a_tau,b_tau,taus[i-1],values,Sigma)
-        thisGP = GP(zeroMean,expCov(taus[i],rhos[i]))
+        rhos[i] = functionRangeSampler(delta,L,values,Rmat,rhos[i-1],Ts[i-1],thismtPP.typeMatrix,a,b)
+        Ts[i] = typePrecisionSampler(n,Vm1,values,Rmat)
+        thisGP = GP(zeroMean,expCov(1,rhos[i]))
         
         
         
@@ -1071,7 +1104,7 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
         i+=1
     
     
-    return(locations, values, lams, rhos, taus)
+    return(locations, values, lams, rhos, Ts)
 
 # ### TESTER: MCMCadams
 
