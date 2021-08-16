@@ -19,8 +19,8 @@ from rGP import zeroMean
 #      return(np.exp((-x[:,0]**2-x[:,1]**2)/0.3))
 # def fct(x):
 #     return(np.exp(-(0.25-np.sqrt((x[:,0]-0.5)**2+(x[:,1]-0.5)**2))**2/0.003)*0.8+0.10)
-# def fct(x):
-#     return(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.007)*0.8+0.10)
+def fct(x):
+    return(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.007)*0.8+0.10)
 
 lam_sim=500
 

@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jul 12 19:13:37 2021
+Created on Mon Aug  2 16:40:04 2021
 
 @author: alier
 """
+
+
+
 
 
 import numpy as np
@@ -20,7 +23,7 @@ from rGP import zeroMean
 
 from MCMCadams import MCMCadams
 
-from scipy.stats import matrix_normal
+
 
 
 
@@ -30,103 +33,26 @@ from scipy.stats import matrix_normal
 
 ## Generate a mtype SGCD
 
-lam=400
-rho=2
-
-locs = PPP.randomHomog(lam).loc
+lam=500
+# rho=2
 
 ### using function
 
 def fct(x):
-    return(1-(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.007)))
+      return(np.exp((-x[:,0]**2-x[:,1]**2)/0.3))
+# def fct(x):
+#     return(1-(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.007)))
 
-locs = PPP.randomNonHomog(lam,fct).loc
+pointpo = PPP.randomNonHomog(lam,fct)
+
+pointpo.plot()
+
 ###
 
 
-newGP = GP(zeroMean,expCov(1,rho))
-
-U = newGP.covMatrix(locs)
-
-n=5
-eps=1/n
-X = np.array([[0,eps,1],[0,-eps,1],[eps,0,-1]])
-V = X@np.transpose(X)
-
-# ## 2D case
-# V = np.array([[1,0.99],[0.99,1]])
 
 
-X = matrix_normal.rvs(rowcov=U, colcov=V)
-
-def multExpit(x):
-    N = np.sum(np.exp(x))
-    probs = np.array([np.exp(i)/(1+N) for i in x])
-    return(np.append(probs,1-np.sum(probs)))
-        
-        
-probs = np.array([multExpit(x) for x in X])
-
-nch = probs.shape[1]
-
-colours = np.array([np.random.choice(nch,p=p) for p in probs])
-
-locs1 = locs[colours == 0]
-locs2 = locs[colours == 1]
-locs3 = locs[colours == 2]
-locs0 = locs[colours == 3]
-
-
-### plot random process
-
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.set_aspect('equal')
-
-
-plt.xlim(0,1)
-plt.ylim(0,1)
-
-plt.scatter(locs1[:,0],locs1[:,1],label="Oak")
-plt.scatter(locs2[:,0],locs2[:,1],label="Pine")
-plt.scatter(locs3[:,0],locs3[:,1],label="Maple")
-
-plt.legend(bbox_to_anchor=(1, 0.8))
-
-plt.show()
-
-
-### with thinned locations
-
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.set_aspect('equal')
-
-
-plt.xlim(0,1)
-plt.ylim(0,1)
-
-plt.scatter(locs1[:,0],locs1[:,1],label="Oak")
-plt.scatter(locs2[:,0],locs2[:,1],label="Pine")
-plt.scatter(locs3[:,0],locs3[:,1],label="Maple")
-plt.scatter(locs0[:,0],locs0[:,1], c="grey",label="Thinned")
-
-
-plt.legend(bbox_to_anchor=(1, 0.8))
-
-plt.show()
-
-
-### make an mtPP format object
-
-
-pp1 = PPP(locs1)
-pp2 = PPP(locs2)
-pp3 = PPP(locs3)
-
-pps = np.array([pp1,pp2,pp3])
-
-mtpp = mtPPP(pps)
+mtpp = mtPPP(np.array([pointpo]))
 
 mtpp.plot()
 
@@ -137,25 +63,27 @@ mtpp.plot()
 size=1000
 nInsDelMov = lam//10
 
-n=5
+
 
 
 K = mtpp.K
 
+n=lam*2
+
 # V_mc=np.linalg.inv(V)/n
-V_mc=np.identity(K)  
+V_mc=np.identity(K)/n
 
 # T_init = np.linalg.inv(V)
 T_init=np.identity(K) 
 
 
 kappa=10
-delta=0.01
+delta=0.1
 L=10
 mu=lam
 sigma2=100
-a=16
-b=8
+a=200
+b=100
 
 p=True
 
@@ -163,7 +91,7 @@ p=True
 import time
 
 t0 = time.time()
-locations,values,lams,rhos,Ts = MCMCadams(size,lam//(K+1),rho,T_init,mtpp,nInsDelMov,kappa,delta,L,mu,sigma2,p,a,b,n,V_mc)
+locations,values,lams,rhos,Ts = MCMCadams(size,lam,a/b,T_init,mtpp,nInsDelMov,kappa,delta,L,mu,sigma2,p,a,b,n,V_mc)
 t1 = time.time()
 
 tt1 = t1-t0
@@ -181,43 +109,48 @@ plt.show()
 plt.plot(rhos)
 plt.show()
 
-
-### correlations
-
-Covs = np.array([np.linalg.inv(t) for t in Ts])
-
-
-corr01 = Covs[:,0,1]/np.sqrt(Covs[:,0,0]*Covs[:,1,1])
-plt.plot(corr01)
-plt.show()
-
-corr02 = Covs[:,0,2]/np.sqrt(Covs[:,0,0]*Covs[:,2,2])
-plt.plot(corr02)
-plt.show()
-
-corr12 = Covs[:,2,1]/np.sqrt(Covs[:,2,2]*Covs[:,1,1])
-plt.plot(corr12)
+plt.plot(Ts[:,0,0])
 plt.show()
 
 
-### last thinned location
+
+### GP values trace
 
 nObs = mtpp.nObs
 
 
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.set_aspect('equal')
+obsGP = np.empty(shape=(size-1,nObs,K))
 
-plt.plot(locations.totLoc()[:nObs,0],locations.totLoc()[:nObs,1], 'o', c="black")
-plt.plot(locations.totLoc()[nObs:,0],locations.totLoc()[nObs:,1], 'o', c="grey")
-plt.xlim(0,1)
-plt.ylim(0,1)
+i=0
+while(i < size-1):
+    values = np.loadtxt("values"+str(i)+".csv", delimiter=",")
+    # np.savetxt("resGP"+str(i)+".csv",lams[i+1]*expit(newGP.rCondGP(gridLoc,locations,np.transpose([values]))) ,delimiter=",")
 
-plt.show()
+    obsGP[i] = np.transpose([values[0:nObs]])
+
+    
+    print(i)
+    i+=1
+    
+    
+fig, axs = plt.subplots(nObs,figsize=(10,nObs))    
+    
+i=0
+while(i < nObs):
+    axs[i].plot(obsGP[:,i])
+
+    
+    print(i)
+    i+=1    
+
+# plt.show()
+fig.savefig("0GPtraces.pdf", bbox_inches='tight')
 
 
 ### dancing thinned locations
+from matplotlib.backends.backend_pdf import PdfPages
+mpdf = PdfPages('0thinLocs.pdf')
+
 
 i=0
 while(i < size-1):
@@ -233,13 +166,15 @@ while(i < size-1):
     plt.xlim(0,1)
     plt.ylim(0,1)
 
-    plt.show()
-    # fig.savefig("thin"+str(i)+".pdf", bbox_inches='tight') 
+    # plt.show()
+    mpdf.savefig(bbox_inches='tight') 
+    plt.close(fig)
     
     
     print(i)
     i+=1
 
+mpdf.close()
 
 
 ### type intensities
@@ -264,10 +199,13 @@ def makeGrid(xlim,ylim,res):
     return(grid)
 
 
-res = 25
+res = 20
 gridLoc = makeGrid([0,1], [0,1], res)
 
-
+def multExpit(x):
+    N = np.sum(np.exp(x))
+    probs = np.array([np.exp(i)/(1+N) for i in x])
+    return(np.append(probs,1-np.sum(probs)))
 
 resGP = np.empty(shape=(size,res**2,K+1))
 # meanGP = np.zeros(shape=(res**2,1))
@@ -288,7 +226,7 @@ while(i < size-1):
     
     S_12S_22m1 = np.dot(np.transpose(S_21),np.linalg.inv(S_22))
     
-    mu = np.dot(S_12S_22m1,values)
+    mu = np.dot(S_12S_22m1,np.transpose([values]))
     spatSig = s_11 - np.dot(S_12S_22m1,S_21)
     
     A = np.linalg.cholesky(Ts[i+1])
@@ -341,7 +279,12 @@ plt.show()
 # fig.savefig("Int1.pdf", bbox_inches='tight')
 
 
-### plot mean intensity type 2
+
+
+    
+    
+    
+### plot mean intensity thinned
 
 imGP = np.transpose(meanGP[:,1].reshape(res,res))
     
@@ -364,62 +307,7 @@ plt.colorbar()
 # plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
     
 plt.show()
-# fig.savefig("Int2.pdf", bbox_inches='tight')
-
-
-### plot mean intensity type 3
-
-imGP = np.transpose(meanGP[:,2].reshape(res,res))
-    
-x = np.linspace(0,1, res+1) 
-y = np.linspace(0,1, res+1) 
-X, Y = np.meshgrid(x,y) 
-    
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.set_aspect('equal')
-    
-plt.pcolormesh(X,Y,imGP, cmap='gray',vmin=mini, vmax=maxi)
-
-for pp in mtpp.pps:
-    plt.plot(pp.loc[:,0],pp.loc[:,1], 'o')
-    
-plt.xlim(0,1)
-plt.ylim(0,1)
-plt.colorbar()
-# plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
-    
-plt.show()
-# fig.savefig("Int2.pdf", bbox_inches='tight')
-
-    
-    
-    
-### plot mean intensity thinned
-
-imGP = np.transpose(meanGP[:,3].reshape(res,res))
-    
-x = np.linspace(0,1, res+1) 
-y = np.linspace(0,1, res+1) 
-X, Y = np.meshgrid(x,y) 
-    
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.set_aspect('equal')
-    
-plt.pcolormesh(X,Y,imGP, cmap='gray',vmin=mini, vmax=maxi)
-
-for pp in mtpp.pps:
-    plt.plot(pp.loc[:,0],pp.loc[:,1], 'o')
-    
-plt.xlim(0,1)
-plt.ylim(0,1)
-plt.colorbar()
-# plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
-    
-plt.show()
 # fig.savefig("thinInt.pdf", bbox_inches='tight')
-
 
 
 

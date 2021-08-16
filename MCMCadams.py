@@ -834,8 +834,8 @@ def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,typeMatrix,a,b):
     whiteVal = np.dot(Ainv,values.totLoc())
     
     K = Tmat.shape[0]
-    H_mom_init = random.normal(size=(ntot,K))
-    rho_mom_init = random.normal(scale=0.5)
+    H_mom_init = random.normal(size=(ntot,K))*1/2
+    rho_mom_init = random.normal()*1/2
     
     
     ### leapfrog algorithm
@@ -1024,25 +1024,25 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
     thisGP = GP(zeroMean,expCov(1,rho_init))
     
     ### location container initialization
-    totLocInit = np.concatenate((thismtPP.locs,PPP.randomHomog(lam=lam_init).loc),0)
+    K = thismtPP.K
+    totLocInit = np.concatenate((thismtPP.locs,PPP.randomHomog(lam=int(lam_init//(K+1))).loc),0)
     nObs = thismtPP.nObs
     
-    locations = bdmatrix(100*lam_init,totLocInit,nObs,"locations") # initial size is a bit of black magic
+    locations = bdmatrix(int(20*lam_init),totLocInit,nObs,"locations") # initial size is a bit of black magic
     
     ### cov matrix initialization
     
-    Rmat = dsymatrix(100*lam_init,thisGP.covMatrix(totLocInit),nObs)
+    Rmat = dsymatrix(int(20*lam_init),thisGP.covMatrix(totLocInit),nObs)
     
     ### GP values container initialization
     
-    values = bdmatrix(100*lam_init,matrix_normal.rvs(rowcov=Rmat.sliceMatrix(),colcov=np.linalg.inv(T_init)),nObs,"values")
+    values = bdmatrix(int(20*lam_init),matrix_normal.rvs(rowcov=Rmat.sliceMatrix(),colcov=np.linalg.inv(T_init)),nObs,"values")
     
     
     ### parameters containers
     lams = np.empty(shape=(size))
     rhos = np.empty(shape=(size))
     
-    K = thismtPP.K
     Ts = np.empty(shape=(size,K,K))
     
     ### independent type prior mean
