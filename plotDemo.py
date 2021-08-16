@@ -312,7 +312,35 @@ plt.legend(bbox_to_anchor=(1, 0.8))
 plt.show()
 
 
+### lansing data from spatstat
 
+blackoak = np.loadtxt("blackoak.csv", delimiter=",")
+hickory = np.loadtxt("hickory.csv", delimiter=",")
+maple = np.loadtxt("maple.csv", delimiter=",")
+redoak = np.loadtxt("redoak.csv", delimiter=",")
+whiteoak = np.loadtxt("whiteoak.csv", delimiter=",")
+
+
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
+
+
+plt.xlim(0,1)
+plt.ylim(0,1)
+
+plt.scatter(blackoak[:,0],blackoak[:,1],label="blackoak")
+plt.scatter(hickory[:,0],hickory[:,1],label="hickory")
+plt.scatter(maple[:,0],maple[:,1],label="maple")
+plt.scatter(redoak[:,0],redoak[:,1],label="redoak")
+plt.scatter(whiteoak[:,0],whiteoak[:,1],label="whiteoak")
+
+
+plt.legend(bbox_to_anchor=(1, 0.8))
+
+plt.show()
+fig.savefig("spatstatData.pdf", bbox_inches='tight')
         
         
         

@@ -86,14 +86,22 @@ class PPP:
 class mtPPP:  
     def __init__(self, pps):
         self.pps = pps
-        n = [x.loc.shape[0] for x in pps]
-        K = pps.shape[0]
+        self.K = pps.shape[0]
+        n = np.empty(shape=self.K,dtype=int)
+        self.locs = np.empty(shape=(0,2))
+        for i in list(range(0,self.K)):
+            n[i] = pps[i].loc.shape[0]
+            self.locs = np.concatenate((self.locs,pps[i].loc))
         c = np.cumsum(n)
-        self.nObs = sum(n)
-        self.typeMatrix = np.zeros(shape=(K,self.nObs))
+        self.nObs = np.sum(n)
+        self.typeMatrix = np.zeros(shape=(self.K,self.nObs))
         self.typeMatrix[0,0:c[0]] = 1
-        for i in list(range(1,K)):
+        for i in list(range(1,self.K)):
             self.typeMatrix[i,c[i-1]:c[i]] = 1
+        
+        
+
+
             
     def plot(self):
         fig = plt.figure()
