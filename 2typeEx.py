@@ -30,7 +30,7 @@ from scipy.stats import matrix_normal
 ## Generate a mtype SGCD
 
 lam=500
-rho=10
+rho=5
 
 locs = PPP.randomHomog(lam).loc
 
@@ -39,9 +39,11 @@ newGP = GP(zeroMean,expCov(1,rho))
 
 U = newGP.covMatrix(locs)
 
-V = np.array([[1,-0.9],[-0.9,1]])*10
-# V = np.array([[1,0.9],[0.9,1]])*10
-# V = np.array([[1,0],[0,1]])*10
+var=1
+
+V = np.array([[1,-0.9],[-0.9,1]])*var
+# V = np.array([[1,0.9],[0.9,1]])*var
+# V = np.array([[1,0],[0,1]])*var
 
 
 
@@ -90,28 +92,28 @@ K = mtpp.K
 lam_est = mtpp.nObs*(K+1)/K
 
 
-size=5000
+size=1000
 nInsDelMov = lam_est//10
 
 
 
 
 
-n=10
+n=50
 
-# V_mc=np.linalg.inv(V)/n
-V_mc=np.identity(K)
+V_mc=np.linalg.inv(V)/n
+# V_mc=np.identity(K)/var/n
 
-# T_init = np.linalg.inv(V)
-T_init=np.identity(K)*n
+T_init = np.linalg.inv(V)
+# T_init=np.identity(K)/var
 
 
 kappa=10
 delta=0.1
 L=10
-mu=lam_est
+mu=lam
 sigma2=100
-a=1000
+a=rho*100
 b=100
 
 p=False
@@ -147,7 +149,8 @@ plt.plot(corr01)
 plt.show()
 
 
-
+plt.plot(Ts[:,0,0])
+plt.show()
 
 
 
