@@ -30,15 +30,15 @@ pointpo.plot()
 
 # ### generate a real SGCP #########
 
-# from numpy import random
-# import matplotlib.pyplot as plt
+from numpy import random
+import matplotlib.pyplot as plt
 
-# lam=400
-# tau=1
-# rho=2
+lam=500
+tau=5
+rho=10
 
-# def expit(x):
-#     return(np.exp(x)/(1+np.exp(x)))
+def expit(x):
+    return(np.exp(x)/(1+np.exp(x)))
 
 # def makeGrid(xlim,ylim,res):
 #     grid = np.ndarray((res**2,2))
@@ -64,22 +64,35 @@ pointpo.plot()
 # gridLoc = makeGrid([0,1], [0,1], res)
 
 
-# locs = PPP.randomHomog(lam).loc
+locs = PPP.randomHomog(lam).loc
 
-# newGP = GP(zeroMean,expCov(tau,rho))
-# GPvals = newGP.rGP(np.concatenate((locs,gridLoc)))
+newGP = GP(zeroMean,expCov(tau,rho))
+GPvals = newGP.rGP(locs)
 
 
 # gridInt = lam*expit(GPvals[locs.shape[0]:,:])
 
 
-# locProb  = expit(GPvals[:locs.shape[0],:])
-# index = np.array(np.greater(locProb,random.uniform(size=locProb.shape)))
-# locObs = locs[np.squeeze(index)]
+locProb  = expit(GPvals)
+index = np.array(np.greater(locProb,random.uniform(size=locProb.shape)))
+locObs = locs[np.squeeze(index)]
+locThin = locs[np.logical_not(np.squeeze(index))]
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
+
+plt.xlim(0,1)
+plt.ylim(0,1)
+
+
+plt.scatter(locObs[:,0],locObs[:,1])
+plt.show()
+# plt.scatter(locThin[:,0],locThin[:,1])
 # locThin = locs[np.logical_not(np.squeeze(index))]
 
 
-
+pointpo.loc = locThin
 
 # ### cox process
 
@@ -129,17 +142,24 @@ pointpo.plot()
 # l=0.5
 # newGP = GP(zeroMean,expCov(1,l))
 
-niter= 500
+niter= 5000
 nInsDelMov = 50
 
 import time
 
 t0 = time.time()
-locations,values,lams,rhos,taus = MCMCadams(size=niter,lam_init=100,rho_init=2,tau_init=1,thisPPP=pointpo,nInsDelMov=nInsDelMov,
-                                  kappa=10,delta=0.1,L=10,mu=400,sigma2=1000,p=True,a=16,b=8,a_tau=10,b_tau=10)
+locations,values,lams,rhos,taus = MCMCadams(size=niter,lam_init=100,rho_init=rho,tau_init=tau,thisPPP=pointpo,nInsDelMov=nInsDelMov,
+                                  kappa=10,delta=0.1,L=10,mu=lam,sigma2=100,p=True,a=rho*10,b=10,a_tau=tau*10,b_tau=10)
 t1 = time.time()
 
 total1 = t1-t0
+
+plt.plot(lams)
+plt.show()
+plt.plot(rhos)
+plt.show()
+plt.plot(taus)
+plt.show()
 
 
 # #### plot of actual intensity ####

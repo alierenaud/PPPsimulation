@@ -683,7 +683,9 @@ def functionRangeSampler(delta,L,values,Sigma,rho,tau,a,b):
     
     
     Sigma_temp = Sigma.sliceMatrix()
-    A = np.linalg.cholesky(Sigma_temp)
+    A_init = np.linalg.cholesky(Sigma_temp)
+    A  = A_init
+    
     
     nObs = values.nObs
     ntot = values.nThin + nObs
@@ -727,7 +729,7 @@ def functionRangeSampler(delta,L,values,Sigma,rho,tau,a,b):
     kinVal_prime = kinVal_prime - delta/2*Urange_prime(posVal_prime[0:ntot,:],A,Ainv,Sigma_temp, nObs, rho_temp, tau, a ,b)
     
     a_func = np.exp(-Urange(posVal_prime[0:ntot,:], A, nObs, posVal_prime[ntot,:], a, b)
-                    +Urange(whiteVal, A, nObs, rho, a, b)
+                    +Urange(whiteVal, A_init, nObs, rho, a, b)
                     - 1/2*np.sum(kinVal_prime**2)
                     + 1/2*np.sum(kinVal**2))
     
