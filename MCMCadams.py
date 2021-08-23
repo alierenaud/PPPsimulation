@@ -22,7 +22,7 @@ from dmatrix import bdmatrix
 from dmatrix import dsymatrix
 
 from scipy.stats import matrix_normal
-from scipy.stats import wishart
+from scipy.stats import invwishart
 
 # Source: (Adams, 2009) Tractable Nonparametric Bayesian Inference in Poisson Processes
 # with Gaussian Process Intensities
@@ -36,7 +36,7 @@ from scipy.stats import wishart
 # along with the its conditionnal GP value
 ###
 
-def insProp(lam, thisGP, locations, values, Rmat, Tmat):
+def insProp(lam, thisGP, locations, values, Rmat, Vmat):
     
     newLoc =  random.uniform(size=(2))
     
@@ -51,10 +51,10 @@ def insProp(lam, thisGP, locations, values, Rmat, Tmat):
     mu = np.dot(S_12S_22m1,values.totLoc())
     spatSig = s_11 - np.dot(S_12S_22m1,S_21)
     
-    A = np.linalg.cholesky(Tmat)
+    # A = np.linalg.cholesky(Tmat)
     
-    K = Tmat.shape[0]
-    Am = sp.linalg.solve_triangular(A,np.identity(K),lower=True)
+    K = Vmat.shape[0]
+    Am = np.linalg.cholesky(Vmat)
     
     newVal = np.sqrt(spatSig)*np.random.normal(size=(1,K))@Am+mu
     
@@ -189,7 +189,7 @@ def alpha(nthin):
 # inserts or deletes a thinned event along with the GP value
 ###
 
-def nthinSampler(lam, thisGP, locations, values, Rmat, Tmat):
+def nthinSampler(lam, thisGP, locations, values, Rmat, Vmat):
     
 
     
@@ -198,7 +198,7 @@ def nthinSampler(lam, thisGP, locations, values, Rmat, Tmat):
     if B:
 
         
-        insProp(lam, thisGP, locations, values, Rmat, Tmat)
+        insProp(lam, thisGP, locations, values, Rmat, Vmat)
         
         # acc_ins = (1-b(nthin+1))/b(nthin)*lam/(nthin+1)/(1+np.exp(newVal))
         
@@ -341,7 +341,7 @@ def kernelBeta(xNew,xOld,kappa):
 # Jitters one of the point process location and resamples the GP at said location
 ###
 
-def locationMove(kappa, thisGP, locations, values, Rmat, Tmat):
+def locationMove(kappa, thisGP, locations, values, Rmat, Vmat):
 
     
     moveInd = random.choice(np.array(range(0,locations.nThin))) ## choose random point to move
@@ -361,10 +361,10 @@ def locationMove(kappa, thisGP, locations, values, Rmat, Tmat):
     mu = np.dot(S_12S_22m1,values.totLoc())
     spatSig = s_11 - np.dot(S_12S_22m1,S_21)
     
-    A = np.linalg.cholesky(Tmat)
+    # A = np.linalg.cholesky(Tmat)
     
-    K = Tmat.shape[0]
-    Am = sp.linalg.solve_triangular(A,np.identity(K),lower=True)
+    K = Vmat.shape[0]
+    Am = np.linalg.cholesky(Vmat)
     
     newVal = np.sqrt(spatSig)*np.random.normal(size=(1,K))@Am+mu
     
@@ -410,15 +410,15 @@ def locationMove(kappa, thisGP, locations, values, Rmat, Tmat):
 # Combines a mixture of birth-death-move type of samplers
 ###
 
-def birthDeathMove(lam, kappa, thisGP, locations, values, Rmat, Tmat):
+def birthDeathMove(lam, kappa, thisGP, locations, values, Rmat, Vmat):
     
     
     A = random.binomial(1,alpha(locations.nThin),1)
     
     if A:
-        nthinSampler(lam, thisGP, locations, values, Rmat, Tmat)
+        nthinSampler(lam, thisGP, locations, values, Rmat, Vmat)
     else:
-        locationMove(kappa, thisGP, locations, values, Rmat, Tmat)
+        locationMove(kappa, thisGP, locations, values, Rmat, Vmat)
     
 
 
@@ -525,7 +525,7 @@ def PHI(X):
 # potential energy in spatially whitened space (AA^T=Rmat) (GP values + range parameter)
 ###
 
-def U(whiteVal, A, nObs, Tmat, typeMatrix, rho, a, b):
+def U(whiteVal, A, nObs, Vmat, typeMatrix, rho, a, b):
     
     
     AH = A@whiteVal
@@ -536,7 +536,7 @@ def U(whiteVal, A, nObs, Tmat, typeMatrix, rho, a, b):
     
     
     
-    return(1/2*np.trace(Tmat@np.transpose(whiteVal)@whiteVal)
+    return(1/2*np.trace(np.linalg.inv(Vmat)@np.transpose(whiteVal)@whiteVal)
            -np.sum(AH[:nObs]*np.transpose(typeMatrix))
            +np.sum(np.log(1+np.exp(AH)@One_K))
            -(a-1)*np.log(rho) + b*rho)
@@ -623,7 +623,7 @@ def U(whiteVal, A, nObs, Tmat, typeMatrix, rho, a, b):
 # returns (1) derivative of potential energy wrt spatially whitened function values H (2) wrt to range parameter rho
 ###
 
-def Uprime(whiteVal, A, Ainv, nObs, Tmat, typeMatrix, Rmat, rho, a, b):
+def Uprime(whiteVal, A, Ainv, nObs, Vmat, typeMatrix, Rmat, rho, a, b):
     
     expAH = np.exp(A@whiteVal)
     
@@ -636,7 +636,7 @@ def Uprime(whiteVal, A, Ainv, nObs, Tmat, typeMatrix, Rmat, rho, a, b):
     name = np.zeros(shape=(ntot,ntot))
     name[:nObs] = np.transpose(whiteVal@typeMatrix)
     
-    return(whiteVal@Tmat + np.transpose(A*OnepExpAHOne_Km1)@expAH-np.transpose(typeMatrix@A[:nObs]),
+    return(whiteVal@np.linalg.inv(Vmat) + np.transpose(A*OnepExpAHOne_Km1)@expAH-np.transpose(typeMatrix@A[:nObs]),
            np.sum((expAH@np.transpose(whiteVal)*OnepExpAHOne_Km1 - name)*(A@PHI(Ainv@(Rmat*(np.log(Rmat)/rho))@np.transpose(Ainv))))-(a-1)/rho+b)
            
 
@@ -818,7 +818,7 @@ def Uprime(whiteVal, A, Ainv, nObs, Tmat, typeMatrix, Rmat, rho, a, b):
 # sampling the GP values at the thinned and observed events + the range parameter rho
 ###
 
-def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,typeMatrix,a,b):
+def functionRangeSampler(delta,L,values,Rmat,rho,Vmat,typeMatrix,a,b):
     
     
     
@@ -833,13 +833,13 @@ def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,typeMatrix,a,b):
     Ainv = sp.linalg.solve_triangular(A,np.identity(ntot),lower=True)
     whiteVal = np.dot(Ainv,values.totLoc())
     
-    K = Tmat.shape[0]
+    K = Vmat.shape[0]
     H_mom_init = random.normal(size=(ntot,K))*1/2
     rho_mom_init = random.normal()*1/2
     
     
     ### leapfrog algorithm
-    Uprime_H, Uprime_rho = Uprime(whiteVal,A,Ainv,nObs,Tmat,typeMatrix,R_temp,rho,a,b)
+    Uprime_H, Uprime_rho = Uprime(whiteVal,A,Ainv,nObs,Vmat,typeMatrix,R_temp,rho,a,b)
     
     H_mom = H_mom_init - delta/2*Uprime_H
     rho_mom = rho_mom_init - delta/2*Uprime_rho
@@ -860,7 +860,7 @@ def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,typeMatrix,a,b):
         A_temp = np.linalg.cholesky(R_temp)
         Ainv_temp = sp.linalg.solve_triangular(A_temp,np.identity(ntot),lower=True)
         
-        Uprime_H, Uprime_rho = Uprime(H_pos,A_temp,Ainv_temp,nObs,Tmat,typeMatrix,R_temp,rho_pos,a,b)
+        Uprime_H, Uprime_rho = Uprime(H_pos,A_temp,Ainv_temp,nObs,Vmat,typeMatrix,R_temp,rho_pos,a,b)
     
         H_mom = H_mom - delta/2*Uprime_H
         rho_mom = rho_mom - delta/2*Uprime_rho
@@ -879,14 +879,14 @@ def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,typeMatrix,a,b):
     A_temp = np.linalg.cholesky(R_temp)
     Ainv_temp = sp.linalg.solve_triangular(A_temp,np.identity(ntot),lower=True)    
         
-    Uprime_H, Uprime_rho = Uprime(H_pos,A_temp,Ainv_temp,nObs,Tmat,typeMatrix,R_temp,rho_pos,a,b)
+    Uprime_H, Uprime_rho = Uprime(H_pos,A_temp,Ainv_temp,nObs,Vmat,typeMatrix,R_temp,rho_pos,a,b)
     
     H_mom = H_mom - delta/2*Uprime_H
     rho_mom = rho_mom - delta/2*Uprime_rho
 
     
-    a_func = np.exp(-U(H_pos, A_temp, nObs, Tmat, typeMatrix, rho_pos, a, b)
-                    +U(whiteVal, A, nObs, Tmat, typeMatrix, rho, a, b)
+    a_func = np.exp(-U(H_pos, A_temp, nObs, Vmat, typeMatrix, rho_pos, a, b)
+                    +U(whiteVal, A, nObs, Vmat, typeMatrix, rho, a, b)
                     - 1/2*np.sum(H_mom**2) - 1/2*rho_mom**2
                     + 1/2*np.sum(H_mom_init**2) + 1/2*rho_mom_init**2)
     
@@ -998,14 +998,12 @@ def intensitySampler(mu,sigma2,ntot):
 # type precision T sampler
 ###
 
-def typePrecisionSampler(n,Vm1,values,Rmat):
-    ntot = values.nThin + values.nObs
-    n_post=n + ntot
-    V_post=Vm1 + np.transpose(values.totLoc())@Rmat.inver@values.totLoc()
-    Tmat= wishart.rvs(n_post, np.linalg.inv(V_post))
+def typeVarianceSampler(n,Vp,values,Rmat):
+
+    Vmat= invwishart.rvs(n+values.nThin + values.nObs, Vp + np.transpose(values.totLoc())@Rmat.inver@values.totLoc())
     
     # Sigma.rescale(tau_prev/tau)
-    return(Tmat)
+    return(Vmat)
 
 
 
@@ -1015,7 +1013,7 @@ def typePrecisionSampler(n,Vm1,values,Rmat):
 ###
 
 
-def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu,sigma2,p,a,b,n,V):
+def MCMCadams(size,lam_init,rho_init,V_init,thismtPP,nInsDelMov,kappa,delta,L,mu,sigma2,p,a,b,n,Vp):
     
     
     ### independent type prior mean
@@ -1036,30 +1034,30 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
     
     ### GP values container initialization
     
-    values = bdmatrix(int(20*lam_init),matrix_normal.rvs(rowcov=Rmat.sliceMatrix(),colcov=np.linalg.inv(T_init)),nObs,"values")
+    values = bdmatrix(int(20*lam_init),matrix_normal.rvs(rowcov=Rmat.sliceMatrix(),colcov=V_init),nObs,"values")
     
     
     ### parameters containers
     lams = np.empty(shape=(size))
     rhos = np.empty(shape=(size))
     
-    Ts = np.empty(shape=(size,K,K))
+    Vs = np.empty(shape=(size,K,K))
     
-    ### independent type prior mean
-    Vm1 = np.linalg.inv(V)
+    # ### independent type prior mean
+    # Vm1 = np.linalg.inv(V)
     
     
     ### 
     lams[0] = lam_init
     rhos[0] = rho_init
-    Ts[0] = T_init
+    Vs[0] = V_init
     
     i=1
     while i < size:
         
         j=0
         while j < nInsDelMov:
-            birthDeathMove(lams[i-1],kappa,thisGP,locations,values,Rmat,Ts[i-1])
+            birthDeathMove(lams[i-1],kappa,thisGP,locations,values,Rmat,Vs[i-1])
             j+=1
         
 
@@ -1077,8 +1075,8 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
         
         # functionSampler(delta,L,values,Sigma)
         
-        rhos[i] = functionRangeSampler(delta,L,values,Rmat,rhos[i-1],Ts[i-1],thismtPP.typeMatrix,a,b)
-        Ts[i] = typePrecisionSampler(n,Vm1,values,Rmat)
+        rhos[i] = functionRangeSampler(delta,L,values,Rmat,rhos[i-1],Vs[i-1],thismtPP.typeMatrix,a,b)
+        Vs[i] = typeVarianceSampler(n,Vp,values,Rmat)
         thisGP = GP(zeroMean,expCov(1,rhos[i]))
         
         
@@ -1104,7 +1102,7 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
         i+=1
     
     
-    return(locations, values, lams, rhos, Ts)
+    return(locations, values, lams, rhos, Vs)
 
 # ### TESTER: MCMCadams
 
