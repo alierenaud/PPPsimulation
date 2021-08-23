@@ -30,7 +30,7 @@ from scipy.stats import matrix_normal
 ## Generate a mtype SGCD
 
 lam=500
-rho=5
+rho=10
 
 locs = PPP.randomHomog(lam).loc
 
@@ -39,9 +39,10 @@ newGP = GP(zeroMean,expCov(1,rho))
 
 U = newGP.covMatrix(locs)
 
-var=1
+var=5
 
-V = np.array([[1,-0.9],[-0.9,1]])*var
+V = np.array([[1]])*var
+# V = np.array([[1,-0.9],[-0.9,1]])*var
 # V = np.array([[1,0.9],[0.9,1]])*var
 # V = np.array([[1,0],[0,1]])*var
 
@@ -62,7 +63,7 @@ nch = probs.shape[1]
 colours = np.array([np.random.choice(nch,p=p) for p in probs])
 
 locs1 = locs[colours == 0]
-locs2 = locs[colours == 1]
+# locs2 = locs[colours == 1]
 
 
 
@@ -72,10 +73,10 @@ locs2 = locs[colours == 1]
 
 
 pp1 = PPP(locs1)
-pp2 = PPP(locs2)
+# pp2 = PPP(locs2)
 
 
-pps = np.array([pp1,pp2])
+pps = np.array([pp1])
 
 mtpp = mtPPP(pps)
 
@@ -92,14 +93,14 @@ K = mtpp.K
 lam_est = mtpp.nObs*(K+1)/K
 
 
-size=1000
+size=2000
 nInsDelMov = lam_est//10
 
 
 
 
 
-n=50
+n=500
 
 V_mc=np.linalg.inv(V)/n
 # V_mc=np.identity(K)/var/n
@@ -142,6 +143,9 @@ plt.show()
 ### correlations
 
 Covs = np.array([np.linalg.inv(t) for t in Ts])
+
+plt.plot(Covs[:,0,0])
+
 
 
 corr01 = Covs[:,0,1]/np.sqrt(Covs[:,0,0]*Covs[:,1,1])
