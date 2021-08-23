@@ -93,7 +93,7 @@ K = mtpp.K
 lam_est = mtpp.nObs*(K+1)/K
 
 
-size=2000
+size=1000
 nInsDelMov = lam_est//10
 
 
@@ -123,7 +123,7 @@ p=False
 import time
 
 t0 = time.time()
-locations,values,lams,rhos,Ts = MCMCadams(size,lam_est,a/b,T_init,mtpp,nInsDelMov,kappa,delta,L,mu,sigma2,p,a,b,n,V_mc)
+lams,rhos,Ts, Nthins = MCMCadams(size,lam_est,a/b,T_init,mtpp,nInsDelMov,kappa,delta,L,mu,sigma2,p,a,b,n,V_mc)
 t1 = time.time()
 
 tt1 = t1-t0
@@ -145,16 +145,19 @@ plt.show()
 Covs = np.array([np.linalg.inv(t) for t in Ts])
 
 plt.plot(Covs[:,0,0])
+plt.show()
 
-
-
-corr01 = Covs[:,0,1]/np.sqrt(Covs[:,0,0]*Covs[:,1,1])
-plt.plot(corr01)
+plt.plot(Nthins)
 plt.show()
 
 
-plt.plot(Ts[:,0,0])
-plt.show()
+# corr01 = Covs[:,0,1]/np.sqrt(Covs[:,0,0]*Covs[:,1,1])
+# plt.plot(corr01)
+# plt.show()
+
+
+# plt.plot(Ts[:,0,0])
+# plt.show()
 
 
 

@@ -1044,6 +1044,7 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
     rhos = np.empty(shape=(size))
     
     Ts = np.empty(shape=(size,K,K))
+    Nthins = np.empty(shape=(size))
     
     ### independent type prior mean
     Vm1 = np.linalg.inv(V)
@@ -1053,6 +1054,7 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
     lams[0] = lam_init
     rhos[0] = rho_init
     Ts[0] = T_init
+    Nthins[0] = locations.nThin
     
     i=1
     while i < size:
@@ -1063,7 +1065,8 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
             j+=1
         
 
-        
+        Nthins[i] = locations.nThin        
+
         # # locTot_prime = np.concatenate((locThin_prime,thisPPP.loc))
         # valTot_prime = np.concatenate((valThin_prime,obsVal[i-1]))
         
@@ -1104,7 +1107,7 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
         i+=1
     
     
-    return(locations, values, lams, rhos, Ts)
+    return(lams, rhos, Ts, Nthins)
 
 # ### TESTER: MCMCadams
 
