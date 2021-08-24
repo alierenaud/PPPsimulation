@@ -39,7 +39,7 @@ newGP = GP(zeroMean,expCov(1,rho))
 
 U = newGP.covMatrix(locs)
 
-var=5
+var=1
 
 V = np.array([[1]])*var
 # V = np.array([[1,-0.9],[-0.9,1]])*var
@@ -93,16 +93,16 @@ K = mtpp.K
 lam_est = mtpp.nObs*(K+1)/K
 
 
-size=1000
+size=200
 nInsDelMov = lam_est//10
 
 
 
 
 
-n=500
+n=100/var
 
-V_mc=np.linalg.inv(V)/n
+V_mc=np.linalg.inv(V/var)/100
 # V_mc=np.identity(K)/var/n
 
 T_init = np.linalg.inv(V)
