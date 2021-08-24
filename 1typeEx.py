@@ -60,7 +60,7 @@ mtpp.plot()
 
 ### initialize other MCMC parameters
 
-size=1000
+size=200
 nInsDelMov = lam//10
 
 
