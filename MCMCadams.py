@@ -822,7 +822,7 @@ def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,typeMatrix,a,b):
     
     
     
-
+    scl = 5
     
     R_temp = Rmat.sliceMatrix()
     A = np.linalg.cholesky(R_temp)
@@ -834,8 +834,8 @@ def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,typeMatrix,a,b):
     whiteVal = np.dot(Ainv,values.totLoc())
     
     K = Tmat.shape[0]
-    H_mom_init = random.normal(size=(ntot,K))*1/2
-    rho_mom_init = random.normal()*1/2
+    H_mom_init = random.normal(size=(ntot,K))*scl
+    rho_mom_init = random.normal()*scl
     
     
     ### leapfrog algorithm
@@ -844,8 +844,8 @@ def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,typeMatrix,a,b):
     H_mom = H_mom_init - delta/2*Uprime_H
     rho_mom = rho_mom_init - delta/2*Uprime_rho
     
-    H_pos = whiteVal + delta*H_mom
-    rho_pos = rho + delta*rho_mom
+    H_pos = whiteVal + delta*H_mom/scl**2
+    rho_pos = rho + delta*rho_mom/scl**2
     if rho_pos < 0:
             rho_pos *= -1
             rho_mom *= -1
@@ -865,8 +865,8 @@ def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,typeMatrix,a,b):
         H_mom = H_mom - delta/2*Uprime_H
         rho_mom = rho_mom - delta/2*Uprime_rho
     
-        H_pos = H_pos + delta*H_mom
-        rho_pos = rho_pos + delta*rho_mom
+        H_pos = H_pos + delta*H_mom/scl**2
+        rho_pos = rho_pos + delta*rho_mom/scl**2
         if rho_pos < 0:
             rho_pos *= -1
             rho_mom *= -1
@@ -887,8 +887,8 @@ def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,typeMatrix,a,b):
     
     a_func = np.exp(-U(H_pos, A_temp, nObs, Tmat, typeMatrix, rho_pos, a, b)
                     +U(whiteVal, A, nObs, Tmat, typeMatrix, rho, a, b)
-                    - 1/2*np.sum(H_mom**2) - 1/2*rho_mom**2
-                    + 1/2*np.sum(H_mom_init**2) + 1/2*rho_mom_init**2)
+                    - 1/2/scl**2*np.sum(H_mom**2) - 1/2/scl**2*rho_mom**2
+                    + 1/2/scl**2*np.sum(H_mom_init**2) + 1/2/scl**2*rho_mom_init**2)
     
     Uf = random.uniform(size=1)
         

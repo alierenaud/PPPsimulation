@@ -29,8 +29,8 @@ from scipy.stats import matrix_normal
 
 ## Generate a mtype SGCD
 
-lam=500
-rho=5
+lam=300
+rho=10
 
 locs = PPP.randomHomog(lam).loc
 
@@ -39,7 +39,7 @@ newGP = GP(zeroMean,expCov(1,rho))
 
 U = newGP.covMatrix(locs)
 
-var=1
+var=5
 
 V = np.array([[1]])*var
 # V = np.array([[1,-0.9],[-0.9,1]])*var
@@ -93,7 +93,7 @@ K = mtpp.K
 lam_est = mtpp.nObs*(K+1)/K
 
 
-size=1000
+size=50000
 nInsDelMov = lam_est//10
 
 
@@ -147,6 +147,9 @@ Covs = np.array([np.linalg.inv(t) for t in Ts])
 plt.plot(Covs[:,0,0])
 plt.show()
 
+plt.plot(Ts[:,0,0])
+plt.show()
+
 plt.plot(Nthins)
 plt.show()
 
@@ -159,5 +162,35 @@ plt.show()
 # plt.plot(Ts[:,0,0])
 # plt.show()
 
+### GP values trace
 
+# nObs = mtpp.nObs
+
+
+# obsGP = np.empty(shape=(size-1,nObs,K))
+
+# i=0
+# while(i < size-1):
+#     values = np.loadtxt("values"+str(i)+".csv", delimiter=",")
+#     # np.savetxt("resGP"+str(i)+".csv",lams[i+1]*expit(newGP.rCondGP(gridLoc,locations,np.transpose([values]))) ,delimiter=",")
+
+#     obsGP[i] = np.transpose([values[0:nObs]])
+
+    
+#     print(i)
+#     i+=1
+    
+    
+# fig, axs = plt.subplots(nObs,figsize=(10,nObs))    
+    
+# i=0
+# while(i < nObs):
+#     axs[i].plot(obsGP[:,i])
+
+    
+#     print(i)
+#     i+=1    
+
+# # plt.show()
+# fig.savefig("0GPtraces.pdf", bbox_inches='tight')
 
