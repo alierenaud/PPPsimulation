@@ -10,6 +10,7 @@ import numpy as np
 
 from numpy import random
 import matplotlib.pyplot as plt
+import matplotlib.markers
 
 from rGP import GP
 from rGP import gaussianCov
@@ -321,6 +322,23 @@ redoak = np.loadtxt("redoak.csv", delimiter=",")
 whiteoak = np.loadtxt("whiteoak.csv", delimiter=",")
 
 
+n1 = blackoak.shape[0]
+n2 = hickory.shape[0]
+n3 = maple.shape[0]
+n4 = redoak.shape[0]
+n5 = whiteoak.shape[0]
+
+N = n1+n2+n3+n4+n5
+
+lansat = np.concatenate((np.concatenate((blackoak,hickory,maple,redoak,whiteoak)),
+np.concatenate((np.full((n1,1),1),np.full((n2,1),2),np.full((n3,1),3),np.full((n4,1),4),np.full((n5,1),5)))),axis=1)
+
+
+coli = np.concatenate((np.full(n1,"tab:purple"),np.full(n2,"tab:blue"),np.full(n3,"tab:red"),np.full(n4,"tab:green"),np.full(n5,"tab:orange")))
+
+
+ind = np.arange(N)
+np.random.shuffle(ind)
 
 fig = plt.figure()
 ax = fig.add_subplot(111)
@@ -330,17 +348,106 @@ ax.set_aspect('equal')
 plt.xlim(0,1)
 plt.ylim(0,1)
 
-plt.scatter(blackoak[:,0],blackoak[:,1],label="blackoak")
-plt.scatter(hickory[:,0],hickory[:,1],label="hickory")
-plt.scatter(maple[:,0],maple[:,1],label="maple")
-plt.scatter(redoak[:,0],redoak[:,1],label="redoak")
-plt.scatter(whiteoak[:,0],whiteoak[:,1],label="whiteoak")
+plt.scatter(blackoak[:,0],blackoak[:,1],label="blackoak",s=5, c="tab:purple")
+plt.scatter(hickory[:,0],hickory[:,1],label="hickory",s=5, c="tab:blue")
+plt.scatter(maple[:,0],maple[:,1],label="maple",s=5, c="tab:red")
+plt.scatter(redoak[:,0],redoak[:,1],label="redoak",s=5, c="tab:green")
+plt.scatter(whiteoak[:,0],whiteoak[:,1],label="whiteoak",s=5, c="tab:orange")
+
+plt.legend(bbox_to_anchor=(1, 0.8), markerscale=2)
+
+plt.scatter(lansat[ind,0],lansat[ind,1],c=coli[ind],s=20)
 
 
-plt.legend(bbox_to_anchor=(1, 0.8))
+
+
 
 plt.show()
 fig.savefig("spatstatData.pdf", bbox_inches='tight')
         
+        
+        
+### maple hickory
+
+lansat = np.concatenate((np.concatenate((hickory,maple)),
+np.concatenate((np.full((n2,1),2),np.full((n3,1),3)))),axis=1)
+
+
+coli = np.concatenate((np.full(n2,"tab:blue"),np.full(n3,"tab:red")))
+
+
+N = n2+n3
+
+ind = np.arange(N)
+np.random.shuffle(ind)
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
+
+
+plt.xlim(0,1)
+plt.ylim(0,1)
+
+
+plt.scatter(hickory[:,0],hickory[:,1],label="hickory",s=5,c="tab:blue")
+
+plt.scatter(maple[:,0],maple[:,1],label="maple",s=5,c="tab:red")
+
+plt.legend(bbox_to_anchor=(1, 0.8), markerscale=2)
+
+plt.scatter(lansat[ind,0],lansat[ind,1],c=coli[ind],s=20)
+
+
+
+
+
+
+plt.show()
+fig.savefig("hickMap.pdf", bbox_inches='tight')        
+        
+        
+### oaks
+
+N = n1+n4+n5
+
+lansat = np.concatenate((np.concatenate((blackoak,redoak,whiteoak)),
+np.concatenate((np.full((n1,1),1),np.full((n4,1),4),np.full((n5,1),5)))),axis=1)
+
+
+coli = np.concatenate((np.full(n1,"tab:purple"),np.full(n4,"tab:green"),np.full(n5,"tab:orange")))
+
+
+ind = np.arange(N)
+np.random.shuffle(ind)
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_aspect('equal')
+
+
+plt.xlim(0,1)
+plt.ylim(0,1)
+
+plt.scatter(blackoak[:,0],blackoak[:,1],label="blackoak",s=5, c="tab:purple")
+plt.scatter(redoak[:,0],redoak[:,1],label="redoak",s=5, c="tab:green")
+plt.scatter(whiteoak[:,0],whiteoak[:,1],label="whiteoak",s=5, c="tab:orange")
+
+plt.legend(bbox_to_anchor=(1, 0.8), markerscale=2)
+
+plt.scatter(lansat[ind,0],lansat[ind,1],c=coli[ind],s=20)
+
+
+
+
+
+plt.show()
+fig.savefig("oaks.pdf", bbox_inches='tight')
+
+
+
+
+
+
         
         
