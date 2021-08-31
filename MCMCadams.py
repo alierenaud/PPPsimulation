@@ -24,6 +24,8 @@ from dmatrix import dsymatrix
 from scipy.stats import matrix_normal
 from scipy.stats import wishart
 
+from matplotlib.backends.backend_pdf import PdfPages
+
 # Source: (Adams, 2009) Tractable Nonparametric Bayesian Inference in Poisson Processes
 # with Gaussian Process Intensities
 
@@ -818,11 +820,11 @@ def Uprime(whiteVal, A, Ainv, nObs, Tmat, typeMatrix, Rmat, rho, a, b):
 # sampling the GP values at the thinned and observed events + the range parameter rho
 ###
 
-def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,typeMatrix,a,b):
+def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,typeMatrix,a,b,GP_mom_scale,range_mom_scale):
     
     
     
-    scl = 5
+
     
     R_temp = Rmat.sliceMatrix()
     A = np.linalg.cholesky(R_temp)
@@ -834,8 +836,8 @@ def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,typeMatrix,a,b):
     whiteVal = np.dot(Ainv,values.totLoc())
     
     K = Tmat.shape[0]
-    H_mom_init = random.normal(size=(ntot,K))*scl
-    rho_mom_init = random.normal()*scl
+    H_mom_init = random.normal(size=(ntot,K))*GP_mom_scale
+    rho_mom_init = random.normal()*range_mom_scale
     
     
     ### leapfrog algorithm
@@ -844,8 +846,8 @@ def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,typeMatrix,a,b):
     H_mom = H_mom_init - delta/2*Uprime_H
     rho_mom = rho_mom_init - delta/2*Uprime_rho
     
-    H_pos = whiteVal + delta*H_mom/scl**2
-    rho_pos = rho + delta*rho_mom/scl**2
+    H_pos = whiteVal + delta*H_mom/GP_mom_scale**2
+    rho_pos = rho + delta*rho_mom/range_mom_scale**2
     if rho_pos < 0:
             rho_pos *= -1
             rho_mom *= -1
@@ -865,8 +867,8 @@ def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,typeMatrix,a,b):
         H_mom = H_mom - delta/2*Uprime_H
         rho_mom = rho_mom - delta/2*Uprime_rho
     
-        H_pos = H_pos + delta*H_mom/scl**2
-        rho_pos = rho_pos + delta*rho_mom/scl**2
+        H_pos = H_pos + delta*H_mom/GP_mom_scale**2
+        rho_pos = rho_pos + delta*rho_mom/range_mom_scale**2
         if rho_pos < 0:
             rho_pos *= -1
             rho_mom *= -1
@@ -887,8 +889,8 @@ def functionRangeSampler(delta,L,values,Rmat,rho,Tmat,typeMatrix,a,b):
     
     a_func = np.exp(-U(H_pos, A_temp, nObs, Tmat, typeMatrix, rho_pos, a, b)
                     +U(whiteVal, A, nObs, Tmat, typeMatrix, rho, a, b)
-                    - 1/2/scl**2*np.sum(H_mom**2) - 1/2/scl**2*rho_mom**2
-                    + 1/2/scl**2*np.sum(H_mom_init**2) + 1/2/scl**2*rho_mom_init**2)
+                    - 1/2/GP_mom_scale**2*np.sum(H_mom**2) - 1/2/range_mom_scale**2*rho_mom**2
+                    + 1/2/GP_mom_scale**2*np.sum(H_mom_init**2) + 1/2/range_mom_scale**2*rho_mom_init**2)
     
     Uf = random.uniform(size=1)
         
@@ -1010,12 +1012,39 @@ def typePrecisionSampler(n,Vm1,values,Rmat):
 
 
 
+
+def makeGrid(xlim,ylim,res):
+    grid = np.ndarray((res**2,2))
+    xlo = xlim[0]
+    xhi = xlim[1]
+    xrange = xhi - xlo
+    ylo = ylim[0]
+    yhi = ylim[1]
+    yrange = yhi - ylo
+    xs = np.arange(xlo, xhi, step=xrange/res) + xrange/res*0.5
+    ys = np.arange(ylo, yhi, step=yrange/res) + yrange/res*0.5
+    i=0
+    for x in xs:
+        j=0
+        for y in ys:
+            grid[i*res+j,:] = [x,y]
+            j+=1
+        i+=1
+    return(grid)
+
+
+def multExpit(x):
+    N = np.sum(np.exp(x))
+    probs = np.array([np.exp(i)/(1+N) for i in x])
+    return(np.append(probs,1-np.sum(probs)))
+
+
 ###
 # full sampler of thinned locations, thinned values, observed values and intensity
 ###
 
 
-def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu,sigma2,p,a,b,n,V):
+def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu,sigma2,p,a,b,n,V,diagnostics,res,thin,GP_mom_scale,range_mom_scale):
     
     
     ### independent type prior mean
@@ -1028,15 +1057,28 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
     totLocInit = np.concatenate((thismtPP.locs,PPP.randomHomog(lam=int(lam_init//(K+1))).loc),0)
     nObs = thismtPP.nObs
     
-    locations = bdmatrix(int(20*lam_init),totLocInit,nObs,"locations") # initial size is a bit of black magic
+    locations = bdmatrix(int(10*lam_init),totLocInit,nObs,"locations") # initial size is a bit of black magic
     
     ### cov matrix initialization
     
-    Rmat = dsymatrix(int(20*lam_init),thisGP.covMatrix(totLocInit),nObs)
+    Rmat = dsymatrix(int(10*lam_init),thisGP.covMatrix(totLocInit),nObs)
     
     ### GP values container initialization
     
-    values = bdmatrix(int(20*lam_init),matrix_normal.rvs(rowcov=Rmat.sliceMatrix(),colcov=np.linalg.inv(T_init)),nObs,"values")
+    
+    ### try to initiate GP in logical position
+    
+    mean_init = np.zeros(shape=(locations.nThin+nObs,K))
+    
+    mean_init[:nObs,:] = np.transpose(np.linalg.cholesky(np.linalg.inv(T_init))@thismtPP.typeMatrix)
+    
+    ####
+    
+    
+    values = bdmatrix(int(10*lam_init),matrix_normal.rvs(rowcov=Rmat.sliceMatrix(),colcov=np.linalg.inv(T_init)) + mean_init,nObs,"values")
+    
+    
+    
     
     
     ### parameters containers
@@ -1056,7 +1098,40 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
     Ts[0] = T_init
     Nthins[0] = locations.nThin
     
+    
+    ### instantiate containers for diagnostics
+    if diagnostics:
+        danceLocs = np.empty(shape=(int(size//thin),int(10*lam_init),2))
+        GPvaluesAtObs = np.empty(shape=(int(size//thin),nObs,K))
+        fieldsGrid = np.empty(shape=(int(size//thin),res**2,K+1))
+        
+        danceLocs[0,:int(nObs+Nthins[0])] = locations.totLoc()
+        GPvaluesAtObs[0] = values.obsLoc()
+        
+        gridLoc = makeGrid([0,1], [0,1], res)
+        
+        s_11 = thisGP.cov(gridLoc,gridLoc)
+        S_21 = thisGP.cov(locations.totLoc(),gridLoc)
+        
+        S_12S_22m1 = np.dot(np.transpose(S_21),Rmat.inver)
+    
+        muGrid = np.dot(S_12S_22m1,values.totLoc())
+        spatSig = s_11 - np.dot(S_12S_22m1,S_21)
+        
+        A = np.linalg.cholesky(Ts[0])
+    
+
+        Am = sp.linalg.solve_triangular(A,np.identity(K),lower=True)
+        
+        newVal = np.linalg.cholesky(spatSig)@np.random.normal(size=(res**2,K))@Am+muGrid
+    
+    
+        fieldsGrid[0] = lams[0]*np.array([multExpit(val) for val in newVal])
+        
+    
+    
     i=1
+    diagnb = 1
     while i < size:
         
         j=0
@@ -1080,7 +1155,7 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
         
         # functionSampler(delta,L,values,Sigma)
         
-        rhos[i] = functionRangeSampler(delta,L,values,Rmat,rhos[i-1],Ts[i-1],thismtPP.typeMatrix,a,b)
+        rhos[i] = functionRangeSampler(delta,L,values,Rmat,rhos[i-1],Ts[i-1],thismtPP.typeMatrix,a,b,GP_mom_scale,range_mom_scale)
         Ts[i] = typePrecisionSampler(n,Vm1,values,Rmat)
         thisGP = GP(zeroMean,expCov(1,rhos[i]))
         
@@ -1096,6 +1171,34 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
         
         lams[i] = intensitySampler(mu,sigma2,values.nThin + values.nObs)
         
+        if diagnostics and i%thin == 0:
+            
+        
+            danceLocs[diagnb,:int(nObs+Nthins[i])] = locations.totLoc()
+            GPvaluesAtObs[diagnb] = values.obsLoc()
+        
+        
+            s_11 = thisGP.cov(gridLoc,gridLoc)
+            S_21 = thisGP.cov(locations.totLoc(),gridLoc)
+        
+            S_12S_22m1 = np.dot(np.transpose(S_21),Rmat.inver)
+    
+            muGrid = np.dot(S_12S_22m1,values.totLoc())
+            spatSig = s_11 - np.dot(S_12S_22m1,S_21)
+        
+            A = np.linalg.cholesky(Ts[i])
+    
+
+            Am = sp.linalg.solve_triangular(A,np.identity(K),lower=True)
+        
+            newVal = np.linalg.cholesky(spatSig)@np.random.normal(size=(res**2,K))@Am+muGrid
+    
+    
+            fieldsGrid[diagnb] = lams[i]*np.array([multExpit(val) for val in newVal])
+            
+            
+            diagnb += 1
+        
         
         if p:
             ### next sample
@@ -1105,6 +1208,114 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
         
         print(i)
         i+=1
+    
+    
+    if diagnostics:
+        
+        
+        
+        ### dancing locations plot
+        mpdf = PdfPages('0thinLocs.pdf')
+
+
+        diagnb=0
+        while(diagnb < int(size//thin)):
+            
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            ax.set_aspect('equal')
+        
+            for pp in thismtPP.pps:
+                    plt.plot(pp.loc[:,0],pp.loc[:,1], 'o')
+            plt.plot(danceLocs[diagnb,nObs:int(nObs+Nthins[diagnb*thin]),0],danceLocs[diagnb,nObs:int(nObs+Nthins[diagnb*thin]),1], 'o', c="grey")
+            plt.xlim(0,1)
+            plt.ylim(0,1)
+        
+            # plt.show()
+            mpdf.savefig(bbox_inches='tight') 
+            plt.close(fig)
+            
+            
+            
+            diagnb+=1
+        
+        mpdf.close()
+            
+        
+        ### GP traces at observerd locations    
+        
+        fig, axs = plt.subplots(nObs,figsize=(10,1.5*nObs))    
+    
+        obsNB=0
+        colNB=0
+        while(obsNB < nObs):
+            colNB=0
+            while(colNB<K):
+                
+                if thismtPP.typeMatrix[colNB,obsNB] == 1:
+                
+                    axs[obsNB].plot(GPvaluesAtObs[:,obsNB,colNB],linewidth=2)
+                    
+                else:
+                    axs[obsNB].plot(GPvaluesAtObs[:,obsNB,colNB],linestyle="dashed")
+                
+                
+        
+                colNB+=1
+            
+            obsNB+=1   
+        
+        # plt.show()
+        fig.savefig("0GPtraces.pdf", bbox_inches='tight')
+        plt.close(fig)
+        
+        
+        ### mean intensities
+        
+        meanFields = np.mean(fieldsGrid, axis=0, dtype=np.float32)
+
+        maxi = np.max(meanFields)
+        mini = np.min(meanFields)
+        
+        
+        fig, axs = plt.subplots(K+1,figsize=(6,6*(K+1)))
+        
+        k=0
+        while k<K+1:
+            
+            imGP = np.transpose(meanFields[:,k].reshape(res,res))
+    
+            x = np.linspace(0,1, res+1) 
+            y = np.linspace(0,1, res+1) 
+            X, Y = np.meshgrid(x,y) 
+                
+            # fig = plt.figure()
+            # axs[k] = fig.add_subplot(111)
+            axs[k].set_aspect('equal')
+                
+            ff = axs[k].pcolormesh(X,Y,imGP, cmap='gray', vmin=mini, vmax=maxi)
+            
+            fig.colorbar(ff,ax=axs[k])   
+            
+            for pp in thismtPP.pps:
+                axs[k].plot(pp.loc[:,0],pp.loc[:,1], 'o')
+               
+             
+            
+            # plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
+                
+            # plt.show()
+
+            
+            k+=1
+        
+        
+        plt.xlim(0,1)
+        plt.ylim(0,1)
+        
+        
+        fig.savefig("0IntFields.pdf", bbox_inches='tight')
+        plt.close(fig)
     
     
     return(lams, rhos, Ts, Nthins)

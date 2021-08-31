@@ -30,7 +30,7 @@ from scipy.stats import matrix_normal
 ## Generate a mtype SGCD
 
 lam=500
-rho=10
+rho=5
 
 locs = PPP.randomHomog(lam).loc
 
@@ -39,11 +39,11 @@ newGP = GP(zeroMean,expCov(1,rho))
 
 U = newGP.covMatrix(locs)
 
-var=25
+var=5
 
 # V = np.array([[1]])*var
-# V = np.array([[1,-0.9],[-0.9,1]])*var
-V = np.array([[1,0.99],[0.99,1]])*var
+V = np.array([[1,-0.99],[-0.99,1]])*var
+# V = np.array([[1,0.99],[0.99,1]])*var
 # V = np.array([[1,0],[0,1]])*var
 
 
@@ -93,7 +93,7 @@ K = mtpp.K
 lam_est = mtpp.nObs*(K+1)/K
 
 
-size=40000
+size=1000
 nInsDelMov = lam_est//10
 
 
@@ -113,9 +113,9 @@ kappa=10
 delta=0.1
 L=10
 mu=lam
-sigma2=100
-a=rho*100
-b=100
+sigma2=1000
+a=rho*10
+b=10
 
 p=False
 
@@ -123,7 +123,8 @@ p=False
 import time
 
 t0 = time.time()
-lams,rhos,Ts, Nthins = MCMCadams(size,lam_est,a/b,T_init,mtpp,nInsDelMov,kappa,delta,L,mu,sigma2,p,a,b,n,V_mc)
+lams,rhos,Ts, Nthins = MCMCadams(size,lam_est,a/b,T_init,mtpp,nInsDelMov,kappa,delta,L,
+                                 mu,sigma2,p,a,b,n,V_mc,diagnostics=True,res=25,thin=10,GP_mom_scale=4,range_mom_scale=7)
 t1 = time.time()
 
 tt1 = t1-t0
