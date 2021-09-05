@@ -29,8 +29,8 @@ from scipy.stats import matrix_normal
 
 ## Generate a mtype SGCD
 
-lam=1000
-rho=2
+lam=500
+rho=5
 
 locs = PPP.randomHomog(lam).loc
 
@@ -39,15 +39,15 @@ newGP = GP(zeroMean,expCov(1,rho))
 
 U = newGP.covMatrix(locs)
 
-var=2
+var=4
 
-# V = np.array([[1]])*var
+V = np.array([[1]])*var
 # V = np.array([[1,-0.9],[-0.9,1]])*var
 # V = np.array([[1,0.9],[0.9,1]])*var
-V = np.array([[1,0],[0,1]])*var
+# V = np.array([[1,0],[0,1]])*var
 # V = np.array([[1,-4.5],[-4.5,25]])*var
 
-mu=-2
+mu=0
 # mu=[0,-2]
 
 X = matrix_normal.rvs(rowcov=U, colcov=V) + mu
@@ -65,7 +65,7 @@ nch = probs.shape[1]
 colours = np.array([np.random.choice(nch,p=p) for p in probs])
 
 locs1 = locs[colours == 0]
-locs2 = locs[colours == 1]
+# locs2 = locs[colours == 1]
 
 
 
@@ -75,10 +75,10 @@ locs2 = locs[colours == 1]
 
 
 pp1 = PPP(locs1)
-pp2 = PPP(locs2)
+# pp2 = PPP(locs2)
 
-
-pps = np.array([pp1,pp2])
+pps = np.array([pp1])
+# pps = np.array([pp1,pp2])
 
 mtpp = mtPPP(pps)
 
@@ -126,7 +126,7 @@ import time
 
 t0 = time.time()
 lams,rhos,Ts, Nthins = MCMCadams(size,lam_est,a/b,T_init,mtpp,nInsDelMov,kappa,delta,L,
-                                 mu,sigma2,p,a,b,n,V_mc,diagnostics=True,res=25,thin=10,GP_mom_scale=4,range_mom_scale=7)
+                                 mu,sigma2,p,a,b,n,V_mc,diagnostics=True,res=25,thin=10,GP_mom_scale=5,range_mom_scale=5)
 t1 = time.time()
 
 tt1 = t1-t0
