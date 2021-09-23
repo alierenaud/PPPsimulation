@@ -1240,9 +1240,11 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
             ax = fig.add_subplot(111)
             ax.set_aspect('equal')
         
+        
+            plt.plot(danceLocs[diagnb,nObs:int(nObs+Nthins[diagnb*thin]),0],danceLocs[diagnb,nObs:int(nObs+Nthins[diagnb*thin]),1], 'o', c=(0.75, 0.75, 0.75))
+
             for pp in thismtPP.pps:
                     plt.plot(pp.loc[:,0],pp.loc[:,1], 'o')
-            plt.plot(danceLocs[diagnb,nObs:int(nObs+Nthins[diagnb*thin]),0],danceLocs[diagnb,nObs:int(nObs+Nthins[diagnb*thin]),1], 'o', c="grey")
             plt.xlim(0,1)
             plt.ylim(0,1)
         
@@ -1293,10 +1295,17 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
         mini = np.min(meanFields)
         
         
-        fig, axs = plt.subplots(K+1,figsize=(6,6*(K+1)))
+        
         
         k=0
         while k<K+1:
+            
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            ax.set_aspect('equal')
+            
+            plt.xlim(0,1)
+            plt.ylim(0,1)
             
             imGP = np.transpose(meanFields[:,k].reshape(res,res))
     
@@ -1306,31 +1315,33 @@ def MCMCadams(size,lam_init,rho_init,T_init,thismtPP,nInsDelMov,kappa,delta,L,mu
                 
             # fig = plt.figure()
             # axs[k] = fig.add_subplot(111)
-            axs[k].set_aspect('equal')
+            ax.set_aspect('equal')
                 
-            ff = axs[k].pcolormesh(X,Y,imGP, cmap='gray', vmin=mini, vmax=maxi)
+            ff = ax.pcolormesh(X,Y,imGP, cmap='gray', vmin=mini, vmax=maxi)
             
-            fig.colorbar(ff,ax=axs[k])   
+            fig.colorbar(ff)   
             
             for pp in thismtPP.pps:
-                axs[k].plot(pp.loc[:,0],pp.loc[:,1], 'o')
+                ax.plot(pp.loc[:,0],pp.loc[:,1], 'o', c="tab:orange")
                
              
             
             # plt.scatter(pointpo.loc[:,0],pointpo.loc[:,1], color= "black", s=1)
                 
             # plt.show()
+            
+            fig.savefig("0IntFields"+str(k)+".pdf", bbox_inches='tight')
+            plt.close(fig)
 
             
             k+=1
         
         
-        plt.xlim(0,1)
-        plt.ylim(0,1)
+
         
         
-        fig.savefig("0IntFields.pdf", bbox_inches='tight')
-        plt.close(fig)
+        # fig.savefig("0IntFields.pdf", bbox_inches='tight')
+        # plt.close(fig)
     
     
     return(lams, rhos, Ts, mus, Nthins)

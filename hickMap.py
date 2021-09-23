@@ -35,7 +35,7 @@ N = nI+nP
 ind = np.arange(N)
 np.random.shuffle(ind)
 
-fig = plt.figure()
+fig = plt.figure(figsize=(5,4))
 ax = fig.add_subplot(111)
 ax.set_aspect('equal')
 
@@ -52,13 +52,13 @@ plt.legend(bbox_to_anchor=(1, 0.8), markerscale=2)
 
 plt.scatter(lansat[ind,0],lansat[ind,1],c=coli[ind],s=20, marker=r'$\clubsuit$')
 
-# plt.show()
+plt.show()
 fig.savefig("hickMap.pdf", bbox_inches='tight')   
 
 ###
 
 
-thinp = 0.1
+thinp = 5/12
 
 hickoryPP = PPP(hickory)
 hickoryPP.thin(thinp)
@@ -84,10 +84,10 @@ K = mtpp.K
 lam_est = mtpp.nObs*(K+1)/K
 
 
-size=30000
+size=10000
 nInsDelMov = lam_est//10
 
-var = 4
+# var = 4
 rho=5
 
 
@@ -100,7 +100,7 @@ V_mc=np.linalg.inv(np.array([[1/100,0],[0,1/100]])) ### attempt at neutral
 
 # T_init=np.linalg.inv(np.array([[1,0.5],[0.5,1]]))/var
 # T_init = np.linalg.inv(V)
-T_init=np.identity(K)/var
+T_init=np.identity(K)
 
 
 kappa=10
@@ -171,7 +171,7 @@ N=1000
 steps = np.linspace(0.0, 0.8, num=20)
 
 
-tail = 10000
+tail = 4000
 pairs(K)
 gs = np.empty(shape=(tail,steps.shape[0],pairs(K).shape[0]))
 i=0
@@ -207,11 +207,17 @@ gs_higher = np.quantile(gs,q=0.9,axis=0)
 fig, axs = plt.subplots(2, 2)
 # ax.set_box_aspect(1)
 
+
+
+fig.suptitle("Pair Correlation Functions")
+
 axs[0, 0].plot(steps,gs_mean[:,0],  c="tab:green",  linestyle="dotted")
 # plt.plot(steps,gs_lower[:,0], linestyle="dashed", c="tab:blue")
 # plt.plot(steps,gs_higher[:,0], linestyle="dashed", c="tab:blue")
 axs[0, 0].fill_between(steps, gs_lower[:,0], gs_higher[:,0], color="tab:green", alpha=0.3, linewidth=0)
 # plt.show()
+
+
 
 axs[0, 0].plot(steps,gs_mean[:,2],  c="tab:red",  linestyle="dotted")
 # plt.plot(steps,gs_lower[:,2], linestyle="dashed", c="tab:orange")
@@ -223,6 +229,8 @@ axs[0, 0].plot(steps,gs_mean[:,1],  c="grey",  linestyle="dotted")
 # plt.plot(steps,gs_lower[:,1], linestyle="dashed", c="black")
 # plt.plot(steps,gs_higher[:,1], linestyle="dashed", c="black")
 axs[0, 0].fill_between(steps, gs_lower[:,1], gs_higher[:,1], color="grey", alpha=0.3, linewidth=0)
+# axs[0, 0].set_ylabel("Pair Correlation Function")
+
 
 
 axs[0, 1].plot(steps,gs_mean[:,2],  c="tab:red",  linestyle="dotted")
@@ -236,15 +244,17 @@ axs[1, 0].plot(steps,gs_mean[:,0],  c="tab:green",  linestyle="dotted")
 # plt.plot(steps,gs_higher[:,0], linestyle="dashed", c="tab:blue")
 axs[1, 0].fill_between(steps, gs_lower[:,0], gs_higher[:,0], color="tab:green", alpha=0.3, linewidth=0)
 # plt.show()
+# axs[1, 0].set_ylabel("Pair Correlation Function")
+axs[1, 0].set_xlabel("Distance")
 
 
 axs[1, 1].plot(steps,gs_mean[:,1],  c="grey",  linestyle="dotted")
 # plt.plot(steps,gs_lower[:,1], linestyle="dashed", c="black")
 # plt.plot(steps,gs_higher[:,1], linestyle="dashed", c="black")
 axs[1, 1].fill_between(steps, gs_lower[:,1], gs_higher[:,1], color="grey", alpha=0.3, linewidth=0)
+axs[1, 1].set_xlabel("Distance")
 
-
-# fig.savefig("hickMapInt.pdf", bbox_inches='tight')  
+fig.savefig("hickMapInt.pdf", bbox_inches='tight')  
 plt.show()
 
 

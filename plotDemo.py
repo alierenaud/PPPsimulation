@@ -36,7 +36,7 @@ plt.ylim(0,1)
 
 plt.show()
 
-fig.savefig("foo.pdf", bbox_inches='tight')   
+# fig.savefig("foo.pdf", bbox_inches='tight')   
 
 # def fct(x):
 #     return(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.003))
@@ -140,8 +140,8 @@ fig.savefig("foo3.pdf", bbox_inches='tight')
 
 
 lam=100
-tau=1/3
-rho=1
+tau=1/4
+rho=5
 
 def expit(x):
     return(np.exp(x)/(1+np.exp(x)))
@@ -334,7 +334,7 @@ lansat = np.concatenate((np.concatenate((blackoak,hickory,maple,redoak,whiteoak)
 np.concatenate((np.full((n1,1),1),np.full((n2,1),2),np.full((n3,1),3),np.full((n4,1),4),np.full((n5,1),5)))),axis=1)
 
 
-coli = np.concatenate((np.full(n1,"tab:purple"),np.full(n2,"tab:blue"),np.full(n3,"tab:red"),np.full(n4,"tab:green"),np.full(n5,"tab:orange")))
+coli = np.concatenate((np.full(n1,"tab:purple"),np.full(n2,"tab:green"),np.full(n3,"tab:red"),np.full(n4,"tab:blue"),np.full(n5,"tab:orange")))
 
 
 ind = np.arange(N)
@@ -349,9 +349,9 @@ plt.xlim(0,1)
 plt.ylim(0,1)
 
 plt.scatter(blackoak[:,0],blackoak[:,1],label="blackoak",s=5, c="tab:purple", marker=r'$\clubsuit$')
-plt.scatter(hickory[:,0],hickory[:,1],label="hickory",s=5, c="tab:blue", marker=r'$\clubsuit$')
+plt.scatter(hickory[:,0],hickory[:,1],label="hickory",s=5, c="tab:green", marker=r'$\clubsuit$')
 plt.scatter(maple[:,0],maple[:,1],label="maple",s=5, c="tab:red", marker=r'$\clubsuit$')
-plt.scatter(redoak[:,0],redoak[:,1],label="redoak",s=5, c="tab:green", marker=r'$\clubsuit$')
+plt.scatter(redoak[:,0],redoak[:,1],label="redoak",s=5, c="tab:blue", marker=r'$\clubsuit$')
 plt.scatter(whiteoak[:,0],whiteoak[:,1],label="whiteoak",s=5, c="tab:orange", marker=r'$\clubsuit$')
 
 plt.legend(bbox_to_anchor=(1, 0.8), markerscale=2)
