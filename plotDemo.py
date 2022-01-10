@@ -334,7 +334,7 @@ lansat = np.concatenate((np.concatenate((blackoak,hickory,maple,redoak,whiteoak)
 np.concatenate((np.full((n1,1),1),np.full((n2,1),2),np.full((n3,1),3),np.full((n4,1),4),np.full((n5,1),5)))),axis=1)
 
 
-coli = np.concatenate((np.full(n1,"tab:purple"),np.full(n2,"tab:green"),np.full(n3,"tab:red"),np.full(n4,"tab:blue"),np.full(n5,"tab:orange")))
+coli = np.concatenate((np.full(n1,"tab:blue"),np.full(n2,"tab:purple"),np.full(n3,"tab:green"),np.full(n4,"tab:red"),np.full(n5,"tab:orange")))
 
 
 ind = np.arange(N)
@@ -348,10 +348,10 @@ ax.set_aspect('equal')
 plt.xlim(0,1)
 plt.ylim(0,1)
 
-plt.scatter(blackoak[:,0],blackoak[:,1],label="blackoak",s=5, c="tab:purple", marker=r'$\clubsuit$')
-plt.scatter(hickory[:,0],hickory[:,1],label="hickory",s=5, c="tab:green", marker=r'$\clubsuit$')
-plt.scatter(maple[:,0],maple[:,1],label="maple",s=5, c="tab:red", marker=r'$\clubsuit$')
-plt.scatter(redoak[:,0],redoak[:,1],label="redoak",s=5, c="tab:blue", marker=r'$\clubsuit$')
+plt.scatter(blackoak[:,0],blackoak[:,1],label="blackoak",s=5, c="tab:blue", marker=r'$\clubsuit$')
+plt.scatter(hickory[:,0],hickory[:,1],label="hickory",s=5, c="tab:purple", marker=r'$\clubsuit$')
+plt.scatter(maple[:,0],maple[:,1],label="maple",s=5, c="tab:green", marker=r'$\clubsuit$')
+plt.scatter(redoak[:,0],redoak[:,1],label="redoak",s=5, c="tab:red", marker=r'$\clubsuit$')
 plt.scatter(whiteoak[:,0],whiteoak[:,1],label="whiteoak",s=5, c="tab:orange", marker=r'$\clubsuit$')
 
 plt.legend(bbox_to_anchor=(1, 0.8), markerscale=2)
@@ -373,7 +373,7 @@ lansat = np.concatenate((np.concatenate((hickory,maple)),
 np.concatenate((np.full((n2,1),2),np.full((n3,1),3)))),axis=1)
 # marks = np.concatenate((np.full(n2,r'$\clubsuit$'),np.full(n3,r'$\spadesuit$')))
 
-coli = np.concatenate((np.full(n2,"tab:green"),np.full(n3,"tab:red")))
+coli = np.concatenate((np.full(n2,"tab:purple"),np.full(n3,"tab:green")))
 
 
 N = n2+n3
@@ -390,9 +390,9 @@ plt.xlim(0,1)
 plt.ylim(0,1)
 
 
-plt.scatter(hickory[:,0],hickory[:,1],label="hickory",s=5,c="tab:green", marker=r'$\clubsuit$')
+plt.scatter(hickory[:,0],hickory[:,1],label="hickory",s=5,c="tab:purple", marker=r'$\clubsuit$')
 
-plt.scatter(maple[:,0],maple[:,1],label="maple",s=5,c="tab:red", marker=r'$\clubsuit$')
+plt.scatter(maple[:,0],maple[:,1],label="maple",s=5,c="tab:green", marker=r'$\clubsuit$')
 
 plt.legend(bbox_to_anchor=(1, 0.8), markerscale=2)
 
@@ -415,7 +415,7 @@ lansat = np.concatenate((np.concatenate((blackoak,redoak,whiteoak)),
 np.concatenate((np.full((n1,1),1),np.full((n4,1),4),np.full((n5,1),5)))),axis=1)
 
 
-coli = np.concatenate((np.full(n1,"tab:purple"),np.full(n4,"tab:green"),np.full(n5,"tab:orange")))
+coli = np.concatenate((np.full(n1,"tab:blue"),np.full(n4,"tab:red"),np.full(n5,"tab:orange")))
 
 
 ind = np.arange(N)
@@ -429,8 +429,8 @@ ax.set_aspect('equal')
 plt.xlim(0,1)
 plt.ylim(0,1)
 
-plt.scatter(blackoak[:,0],blackoak[:,1],label="blackoak",s=5, c="tab:purple")
-plt.scatter(redoak[:,0],redoak[:,1],label="redoak",s=5, c="tab:green")
+plt.scatter(blackoak[:,0],blackoak[:,1],label="blackoak",s=5, c="tab:blue")
+plt.scatter(redoak[:,0],redoak[:,1],label="redoak",s=5, c="tab:red")
 plt.scatter(whiteoak[:,0],whiteoak[:,1],label="whiteoak",s=5, c="tab:orange")
 
 plt.legend(bbox_to_anchor=(1, 0.8), markerscale=2)
