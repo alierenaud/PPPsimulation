@@ -38,10 +38,14 @@ lam=500
 
 ### using function
 
-def fct(x):
-      return(np.exp((-x[:,0]**2-x[:,1]**2)/0.3))
+# def fct(x):
+#       return(np.exp((-x[:,0]**2-x[:,1]**2)/0.3))
 # def fct(x):
 #     return(1-(np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.007)))
+# def fct(x):
+#     return(1-np.exp(-np.minimum((x[:,0]-0.5)**2,(x[:,1]-0.5)**2)/0.05))
+def fct(x):
+    return(np.exp(-(0.25-np.sqrt((x[:,0]-0.5)**2+(x[:,1]-0.5)**2))**2/0.005))
 
 pointpo = PPP.randomNonHomog(lam,fct)
 
@@ -49,7 +53,11 @@ pointpo.plot()
 
 ###
 
+pointpo.loc=np.loadtxt("maple.csv", delimiter=",")
+# pointpo.loc=np.loadtxt("hickory.csv", delimiter=",")
 
+thinp=1/2
+pointpo.thin(thinp)
 
 
 mtpp = mtPPP(np.array([pointpo]))
@@ -57,44 +65,61 @@ mtpp = mtPPP(np.array([pointpo]))
 mtpp.plot()
 
 
-
 ### initialize other MCMC parameters
-
-size=200
-nInsDelMov = lam//10
-
 
 
 
 K = mtpp.K
 
-n=lam*2
+lam_est = mtpp.nObs*(K+1)/K
 
-# V_mc=np.linalg.inv(V)/n
-V_mc=np.identity(K)/n
 
+size=10000
+nInsDelMov = lam_est//10
+
+
+
+
+
+n=2
+
+V_mc=np.linalg.inv(np.array([[1/100]])) ### attempt at neutral
+# V_mc=np.linalg.inv(np.array([[1/100,0],[0,1/100]])) ### attempt at neutral
+# V_mc=np.linalg.inv(V/var)/10
+# V_mc=np.identity(K)/10
+
+# T_init=np.linalg.inv(np.array([[1,0.5],[0.5,1]]))/var
 # T_init = np.linalg.inv(V)
-T_init=np.identity(K) 
+T_init=np.identity(K)
 
-
+rho=5
 kappa=10
-delta=0.1
+delta=0.05
 L=10
 mu=lam
-sigma2=100
-a=200
-b=100
+sigma2=1000
+a=rho*10
+b=10
+mu_init = np.array([-2])
+mean_mu = np.array([[-2]])
+var_mu = 4
 
-p=True
+p=False
 
 
 import time
 
 t0 = time.time()
-locations,values,lams,rhos,Ts = MCMCadams(size,lam,a/b,T_init,mtpp,nInsDelMov,kappa,delta,L,mu,sigma2,p,a,b,n,V_mc)
+lams,rhos,Ts,mus, Nthins = MCMCadams(size,lam_est,a/b,T_init,mtpp,nInsDelMov,kappa,delta,L,
+                                 mu,sigma2,p,a,b,n,V_mc,mu_init,mean_mu,var_mu,diagnostics=True,res=50,thin=25,GP_mom_scale=5,range_mom_scale=5)
 t1 = time.time()
 
 tt1 = t1-t0
+
+
+
+
+
 
 ### Diagnostics
 
@@ -112,6 +137,14 @@ plt.show()
 plt.plot(Ts[:,0,0])
 plt.show()
 
+plt.plot(1/Ts[:,0,0])
+plt.show()
+
+plt.plot(mus[:,0])
+plt.show()
+
+plt.plot(Nthins)
+plt.show()
 
 
 ### GP values trace

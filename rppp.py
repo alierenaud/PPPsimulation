@@ -71,6 +71,11 @@ class PPP:
         newPPP.loc = newLoc[[isInUnitSquare(x) for x in newLoc]]
         return(newPPP)
     
+    def thin(self,p):
+        index = np.greater(p,random.uniform(size=self.loc.shape[0]))
+        self.loc = self.loc[index]
+        
+    
     def plot(self):
         fig = plt.figure()
         ax = fig.add_subplot(111)
