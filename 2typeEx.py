@@ -30,7 +30,7 @@ from scipy.stats import matrix_normal
 
 ## Generate a mtype SGCD
 
-lam=500
+lam=2400
 rho=5
 
 locs = PPP.randomHomog(lam).loc
@@ -96,7 +96,7 @@ K = mtpp.K
 lam_est = mtpp.nObs*(K+1)/K
 
 
-size=10000
+size=100
 nInsDelMov = lam_est//10
 
 
@@ -182,7 +182,7 @@ N=100
 steps = np.linspace(0.0, 1.0, num=50)
 
 
-tail = 4000
+tail = 100
 pairs(K)
 gs = np.empty(shape=(tail,steps.shape[0],pairs(K).shape[0]))
 i=0
